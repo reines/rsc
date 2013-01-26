@@ -208,11 +208,15 @@ public class GameClient extends JPanel implements Runnable {
         return ImmutableList.copyOf(fields);
     }
 
-    private static CtMethod findConnectMethod(ClassPool pool, CtClass client) throws NotFoundException, CannotCompileException {
+    private static CtMethod findConnectMethod(ClassPool pool, CtClass clazz) throws NotFoundException, CannotCompileException {
         final CtClass returnType = pool.get(Socket.class.getName());
         final CtClass[] parameterTypes = { CtClass.byteType, pool.get(String.class.getName()), CtClass.intType };
 
-        for (CtMethod method : client.getDeclaredMethods()) {
+        return GameClient.findMethod(clazz.getDeclaredMethods(), returnType, parameterTypes);
+    }
+
+    private static CtMethod findMethod(CtMethod[] methods, CtClass returnType, CtClass[] parameterTypes) throws NotFoundException {
+        for (CtMethod method : methods) {
             if (!returnType.equals(method.getReturnType()))
                 continue;
 

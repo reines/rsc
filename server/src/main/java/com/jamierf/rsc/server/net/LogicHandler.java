@@ -40,8 +40,12 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
         // We have no session and the handler for this packet type requires one
         if (session == null && handler.isSessionRequired()) {
             System.err.println("no client");
+
+            ctx.getChannel().close();
             return;
         }
+
+        System.err.println("Handling: " + packet);
 
         handler.handle(ctx, session, packet);
     }

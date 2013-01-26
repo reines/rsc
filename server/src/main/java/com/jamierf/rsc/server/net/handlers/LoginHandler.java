@@ -4,10 +4,8 @@ import com.jamierf.rsc.server.net.PacketHandler;
 import com.jamierf.rsc.server.net.Session;
 import com.jamierf.rsc.server.net.packet.LoginRequestPacket;
 import com.jamierf.rsc.server.net.packet.LoginResponsePacket;
-import com.jamierf.rsc.server.net.packet.SetPositionCommandPacket;
 import org.jboss.netty.channel.ChannelHandlerContext;
 
-import java.io.IOException;
 import java.security.interfaces.RSAPrivateKey;
 
 public class LoginHandler extends PacketHandler<LoginRequestPacket> {
@@ -58,18 +56,26 @@ public class LoginHandler extends PacketHandler<LoginRequestPacket> {
         return LoginRequestPacket.class;
     }
 
+    @Override
+    public boolean isSessionRequired() {
+        return false;
+    }
+
     private LoginStatus attemptLogin(Session session, String username, char[] password, boolean reconnection) {
+        System.err.println("Attempting to login for: " + username + " : " + new String(password));
         return LoginStatus.REGULAR_LOGIN; // TODO
     }
 
     @Override
-    public void handle(ChannelHandlerContext ctx, Session session, LoginRequestPacket packet) throws InterruptedException, IOException, NoSuchFieldException, InstantiationException, IllegalAccessException {
-        final LoginRequestPacket.SessionCredentials credentials = packet.decryptSessionCredentials(key);
-
-        System.err.println("Handling login: " + packet);
+    public void handle(ChannelHandlerContext ctx, Session session, LoginRequestPacket packet) throws Exception {
+        final LoginRequestPacket.SessionData sessionData = packet.decryptSessionData(key);
+        final LoginRequestPacket.LoginData loginData = packet.decryptLoginData(sessionData.getSessionKeys());
 
         // Attempt to log the user in
-        final LoginStatus status = this.attemptLogin(session, credentials.getUsername(), credentials.getPassword(), packet.isReconnecting());
+        final LoginStatus status = this.attemptLogin(session, loginData.getUsername(), sessionData.getPassword(), packet.isReconnecting());
+
+        // Create a session for this client
+        session = new Session(ctx.getChannel());
 
         // Send the response
         session.write(new LoginResponsePacket(status)).sync();
@@ -77,13 +83,15 @@ public class LoginHandler extends PacketHandler<LoginRequestPacket> {
         // We failed to login, end the session
         if (!status.isSuccess()) {
             session.close();
-            ctx.setAttachment(null);
 
             return;
         }
 
+        // Attach this session to the channel
+        ctx.setAttachment(session);
+
         // Enable packet rotation using the session keys
-        session.getPacketRotator().setSeed(credentials.getSessionKeys());
+        session.getPacketRotator().setSeed(sessionData.getSessionKeys());
 
         // TODO: Update the session meta data
     }

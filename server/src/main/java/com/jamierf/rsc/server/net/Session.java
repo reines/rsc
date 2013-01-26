@@ -13,7 +13,7 @@ public class Session implements Closeable {
 
     private static final SecureRandom random = new SecureRandom();
 
-    private static long generateUniqueId(byte sessionId) {
+    private static long generateUniqueId() {
         return random.nextLong();
     }
 
@@ -21,8 +21,8 @@ public class Session implements Closeable {
     private final Channel channel;
     private final PacketRotator packetRotator;
 
-    public Session(byte sessionId, Channel channel) {
-        this.sessionId = Session.generateUniqueId(sessionId);
+    public Session(Channel channel) {
+        this.sessionId = Session.generateUniqueId();
         this.channel = channel;
 
         packetRotator = new PacketRotator();

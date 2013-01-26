@@ -18,7 +18,7 @@ public class PacketEncoder extends OneToOneEncoder {
 
     public static final String NAME = "packet-encoder";
 
-    public static ChannelBuffer encodePacket(Class<? extends Packet> type, Packet packet) throws IOException, IllegalAccessException, NoSuchFieldException, BadPaddingException, IllegalBlockSizeException {
+    public static ChannelBuffer encodePacket(Class<? extends Packet> type, Packet packet) throws Exception {
         ChannelBuffer payload = ChannelBuffers.dynamicBuffer();
 
         // For every field attempt to encode it
@@ -28,7 +28,7 @@ public class PacketEncoder extends OneToOneEncoder {
         return payload;
     }
 
-    private static void getField(Field field, Packet packet, ChannelBuffer buffer) throws IOException, IllegalAccessException {
+    private static void getField(Field field, Packet packet, ChannelBuffer buffer) throws Exception {
         final Class<?> type = field.getType();
         final FieldCodec codec = FieldCodec.getInstance(type);
         if (codec == null)

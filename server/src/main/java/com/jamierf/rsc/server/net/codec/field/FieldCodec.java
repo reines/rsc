@@ -25,6 +25,6 @@ public abstract class FieldCodec<T> {
         return FIELD_CODECS.get(type);
     }
 
-    public abstract T decode(ChannelBuffer buffer);
-    public abstract void encode(T value, ChannelBuffer buffer);
+    public abstract T decode(ChannelBuffer buffer) throws Exception;
+    public abstract void encode(T value, ChannelBuffer buffer) throws Exception;
 }

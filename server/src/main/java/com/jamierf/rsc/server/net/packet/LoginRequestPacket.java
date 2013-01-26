@@ -3,32 +3,25 @@ package com.jamierf.rsc.server.net.packet;
 import com.google.common.base.Objects;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
 import com.jamierf.rsc.server.net.codec.packet.PacketDecoder;
+import com.jamierf.rsc.server.net.crypto.RSACipher;
+import com.jamierf.rsc.server.net.crypto.XTeaCipher;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 
-import java.io.IOException;
-import java.math.BigInteger;
 import java.security.interfaces.RSAPrivateKey;
 
 public class LoginRequestPacket extends Packet {
 
-    public static class SessionCredentials extends Packet {
+    public static class SessionData extends Packet {
 
         private byte unknown1;
         private int sessionKey1;
         private int sessionKey2;
         private int sessionKey3;
         private int sessionKey4;
-        private int unknown2;
-        private String username;
         private String password;
 
         public int[] getSessionKeys() {
             return new int[]{ sessionKey1, sessionKey2, sessionKey3, sessionKey4 };
-        }
-
-        public String getUsername() {
-            return username.trim();
         }
 
         public char[] getPassword() {
@@ -36,29 +29,46 @@ public class LoginRequestPacket extends Packet {
         }
     }
 
+    public static class LoginData extends Packet {
+
+        private boolean limit30;
+        private String username;
+
+        public boolean isLimit30() {
+            return limit30;
+        }
+
+        public String getUsername() {
+            return username.trim();
+        }
+
+    }
+
     private boolean reconnecting;
-    private short clientVersion;
-    private boolean limit30;
-    private byte[] encrypted;
+    private int clientVersion;
+    private byte[] sessionData;
+    private byte[] loginData;
 
     public boolean isReconnecting() {
         return reconnecting;
     }
 
-    public short getClientVersion() {
+    public int getClientVersion() {
         return clientVersion;
     }
 
-    public boolean isLimit30() {
-        return limit30;
+    public SessionData decryptSessionData(RSAPrivateKey key) throws Exception {
+        final ChannelBuffer payload = RSACipher.decrypt(sessionData, key);
+        return PacketDecoder.decodePacket(SessionData.class, payload);
     }
 
-    public SessionCredentials decryptSessionCredentials(RSAPrivateKey key) throws IllegalAccessException, IOException, InstantiationException, NoSuchFieldException {
-        final BigInteger encrypted = new BigInteger(this.encrypted);
-        final BigInteger decrypted = encrypted.modPow(key.getPrivateExponent(), key.getModulus());
+    public LoginData decryptLoginData(int[] key) throws Exception {
+        final ChannelBuffer payload = XTeaCipher.decrypt(loginData, key);
 
-        final ChannelBuffer payload = ChannelBuffers.wrappedBuffer(decrypted.toByteArray());
-        return PacketDecoder.decodePacket(SessionCredentials.class, payload);
+        // Skip the first 24 bytes, they are padding...
+        payload.skipBytes(24);
+
+        return PacketDecoder.decodePacket(LoginData.class, payload);
     }
 
     @Override
@@ -66,7 +76,6 @@ public class LoginRequestPacket extends Packet {
         return Objects.toStringHelper(this)
                 .add("reconnecting", reconnecting)
                 .add("clientVersion", clientVersion)
-                .add("limit30", limit30)
                 .toString();
     }
 }

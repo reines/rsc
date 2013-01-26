@@ -5,7 +5,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 public class ByteArrayFieldCodec extends FieldCodec<byte[]> {
     @Override
     public byte[] decode(ChannelBuffer buffer) {
-        final int length = buffer.readByte();
+        final int length = buffer.readShort();
 
         final byte[] bytes = new byte[length];
         buffer.readBytes(bytes);

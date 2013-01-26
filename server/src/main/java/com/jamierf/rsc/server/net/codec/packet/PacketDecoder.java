@@ -18,7 +18,7 @@ public class PacketDecoder extends FrameDecoder {
 
     public static final String NAME = "packet-decoder";
 
-    public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer payload) throws IOException, IllegalAccessException, InstantiationException, NoSuchFieldException {
+    public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer payload) throws Exception {
         final T packet = type.newInstance();
 
         // If we have a raw packet then don't bother decoding
@@ -38,11 +38,11 @@ public class PacketDecoder extends FrameDecoder {
         if (buffer.readableBytes() < 2)
             return -1;
 
-        final int length = buffer.readByte();
-        return length < 160 ? length : (length - 160) * 256 + buffer.readByte();
+        final int length = buffer.readUnsignedByte();
+        return length < 160 ? length : (length - 160) * 256 + buffer.readUnsignedByte();
     }
 
-    private static void setField(Field field, Packet packet, ChannelBuffer buffer) throws IOException, IllegalAccessException {
+    private static void setField(Field field, Packet packet, ChannelBuffer buffer) throws Exception {
         final Class<?> type = field.getType();
         final FieldCodec codec = FieldCodec.getInstance(type);
         if (codec == null)
