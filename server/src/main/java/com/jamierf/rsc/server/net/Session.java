@@ -17,15 +17,21 @@ public class Session implements Closeable {
         return random.nextLong();
     }
 
-    private final long sessionId;
     private final Channel channel;
+    private final String username;
+    private final long sessionId;
     private final PacketRotator packetRotator;
 
-    public Session(Channel channel) {
-        this.sessionId = Session.generateUniqueId();
+    public Session(Channel channel, String username, int[] sessionKeys) {
         this.channel = channel;
+        this.username = username;
 
-        packetRotator = new PacketRotator();
+        sessionId = Session.generateUniqueId();
+        packetRotator = new PacketRotator(sessionKeys);
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public long getSessionId() {

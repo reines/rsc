@@ -8,10 +8,9 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 
 public class PacketEncoder extends OneToOneEncoder {
@@ -22,8 +21,14 @@ public class PacketEncoder extends OneToOneEncoder {
         ChannelBuffer payload = ChannelBuffers.dynamicBuffer();
 
         // For every field attempt to encode it
-        for (Field field : type.getDeclaredFields())
+        for (Field field : type.getDeclaredFields()) {
+            final int modifiers = field.getModifiers();
+            // Skip static fields
+            if (Modifier.isStatic(modifiers))
+                continue;
+
             PacketEncoder.getField(field, packet, payload);
+        }
 
         return payload;
     }
@@ -61,17 +66,21 @@ public class PacketEncoder extends OneToOneEncoder {
 
     @Override
     protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
+        // Allow channel buffers through directly
+        if (msg instanceof ChannelBuffer)
+            return msg;
+
         final Packet packet = (Packet) msg;
-        final Class<? extends Packet> type = packet.getClass();
 
         // If it's a raw packet then there is no encoding to do
         if (packet instanceof RawPacket)
             return ((RawPacket) packet).buffer;
 
+        final Class<? extends Packet> type = packet.getClass();
         if (!packetTypes.containsKey(type))
             throw new IOException("Unrecognised packet type: " + type);
 
-        int id = packetTypes.get(packet.getClass());
+        int id = packetTypes.get(type);
 
         final Session session = (Session) ctx.getAttachment();
         if (session != null)

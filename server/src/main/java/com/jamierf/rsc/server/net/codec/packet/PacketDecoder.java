@@ -8,10 +8,9 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 
 public class PacketDecoder extends FrameDecoder {
@@ -27,8 +26,14 @@ public class PacketDecoder extends FrameDecoder {
         }
         else {
             // For every field attempt to decode it
-            for (Field field : type.getDeclaredFields())
+            for (Field field : type.getDeclaredFields()) {
+                final int modifiers = field.getModifiers();
+                // Skip static fields
+                if (Modifier.isStatic(modifiers))
+                    continue;
+
                 PacketDecoder.setField(field, packet, payload);
+            }
         }
 
         return packet;
