@@ -3,7 +3,6 @@ package com.jamierf.rsc.client.loader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import javassist.*;
 
@@ -11,8 +10,6 @@ import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AppletStub;
 import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -22,23 +19,22 @@ import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.List;
-import java.util.jar.JarInputStream;
-import java.util.zip.ZipEntry;
 
 public class GameClient extends JPanel implements Runnable {
 
     private static final Dimension CLIENT_RESOLUTION = new Dimension(512, 345);
+    private static final String JAR_NAME = "rsclassic.jar";
 
     private static URL buildServerURL(String serverHost) throws MalformedURLException {
         return new URL("http", serverHost, "/");
     }
 
-    private static ImmutableMap<String, String> buildParameterMap() {
+    private static ImmutableMap<String, String> buildParameterMap(boolean members) {
         return ImmutableMap.<String, String>builder()
                 .put("nodeid", "0")
                 .put("modewhere", "0")
                 .put("modewhat", "0")
-                .put("servertype", "1")
+                .put("servertype", members ? "1" : "0")
                 .put("advertsuppressed", "0")
                 .put("objecttag", "0")
                 .put("js", "1")
@@ -49,18 +45,10 @@ public class GameClient extends JPanel implements Runnable {
                 .build();
     }
 
-    // TODO: Download the resources and cache locally. verify SHA1 against expected
+    private static Applet loadClientApplet(URL resourceURL, URL serverURL, RSAPublicKey key, boolean members) throws GameClientModificationException, IOException {
+        final Class<Applet> clazz = GameClient.loadClientAppletClass(resourceURL, key);
 
-    private static File getTempDirectory() {
-        return Files.createTempDir();
-    }
-
-    private static Applet loadClientApplet(URL resourceURL, URL serverURL, RSAPublicKey key) throws GameClientModificationException {
-        final File tempDir = GameClient.getTempDirectory();
-
-        final Class<Applet> clazz = GameClient.loadClientAppletClass(resourceURL, key, tempDir);
-
-        final AppletStub stub = new MockAppletStub(resourceURL, serverURL, GameClient.buildParameterMap());
+        final AppletStub stub = new MockAppletStub(resourceURL, serverURL, GameClient.buildParameterMap(members));
 
         try {
             final Applet applet = clazz.getConstructor(GameClientCallback.class).newInstance(stub);
@@ -69,16 +57,14 @@ public class GameClient extends JPanel implements Runnable {
             return applet;
         }
         catch (ReflectiveOperationException e) {
-            throw new GameClientModificationException("Unable to instanciate client", e);
+            throw new GameClientModificationException("Unable to instantiate client", e);
         }
     }
 
-    private static Class<Applet> loadClientAppletClass(URL resourceURL, RSAPublicKey key, File tempDir) throws GameClientModificationException {
+    private static Class<Applet> loadClientAppletClass(URL resourceURL, RSAPublicKey key) throws GameClientModificationException {
         try {
-            // Download the class files to our temp directory
-            GameClient.fetchClasses(resourceURL, tempDir);
-
-            final DirectoryClassLoader loader = new DirectoryClassLoader(tempDir, ClassLoader.getSystemClassLoader());
+            final URL jarURL = new URL(resourceURL, JAR_NAME);
+            final CachingRemoteJarClassLoader loader = new CachingRemoteJarClassLoader(jarURL, ClassLoader.getSystemClassLoader());
 
             // Create a class pool with our classes and the game client in it
             final ClassPool pool = ClassPool.getDefault();
@@ -133,26 +119,7 @@ public class GameClient extends JPanel implements Runnable {
             throw new GameClientModificationException("Unable to find classes", e);
         }
         catch (IOException e) {
-            throw new GameClientModificationException("Unable to download game client jar", e);
-        }
-    }
-
-    private static void fetchClasses(URL resourceURL, File destination) throws IOException {
-        final JarInputStream in = new JarInputStream(new URL(resourceURL, "rsclassic.jar").openStream(), true);
-
-        for (ZipEntry entry; (entry = in.getNextEntry()) != null;) {
-            // Skip non class files
-            final String name = entry.getName();
-            if (!name.endsWith(".class"))
-                continue;
-
-            final FileOutputStream out = new FileOutputStream(new File(destination, entry.getName()));
-            try {
-                ByteStreams.copy(in, out);
-            }
-            finally {
-                out.close();
-            }
+            throw new GameClientModificationException("Unable to download jar", e);
         }
     }
 
@@ -195,6 +162,7 @@ public class GameClient extends JPanel implements Runnable {
                 try {
                     final BigInteger v1 = (BigInteger) o1.get(null);
                     final BigInteger v2 = (BigInteger) o2.get(null);
+
                     return Integer.compare(v1.bitLength(), v2.bitLength());
                 }
                 catch (IllegalAccessException e) {
@@ -229,14 +197,14 @@ public class GameClient extends JPanel implements Runnable {
 
     private final Applet client;
 
-    public GameClient(URL resourceURL, String serverHost, RSAPublicKey key) throws Exception {
-        this (resourceURL, GameClient.buildServerURL(serverHost), key);
+    public GameClient(URL resourceURL, String serverHost, RSAPublicKey key, boolean members) throws Exception {
+        this (resourceURL, GameClient.buildServerURL(serverHost), key, members);
     }
 
-    public GameClient(URL resourceURL, URL serverURL, RSAPublicKey key) throws Exception {
+    public GameClient(URL resourceURL, URL serverURL, RSAPublicKey key, boolean members) throws Exception {
         super(new BorderLayout());
 
-        client = GameClient.loadClientApplet(resourceURL, serverURL, key);
+        client = GameClient.loadClientApplet(resourceURL, serverURL, key, members);
 
         super.setPreferredSize(CLIENT_RESOLUTION);
         super.add(client);

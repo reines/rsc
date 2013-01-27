@@ -14,6 +14,7 @@ import java.security.interfaces.RSAPublicKey;
 public class Client {
 
     private static final String SERVER_HOST = "localhost";
+    private static final boolean SERVER_MEMBERS = true;
     private static final String CLIENT_TITLE = "Test";
 
     static {
@@ -34,7 +35,7 @@ public class Client {
     public Client(String serverHost, String title) throws Exception {
         final RSAPublicKey key = (RSAPublicKey) new PEMReader(new InputStreamReader(Client.class.getResourceAsStream("key.pem"))).readObject();
 
-        client = new GameClient(Client.buildResourceURL(), serverHost, key);
+        client = new GameClient(Client.buildResourceURL(), serverHost, key, SERVER_MEMBERS);
         frame = new ClientFrame(client, title);
 
         client.run();
