@@ -16,6 +16,8 @@ public class LogoutHandler extends PacketHandler<LogoutRequestPacket> {
     public void handle(ChannelHandlerContext ctx, Session session, LogoutRequestPacket packet) {
         System.err.println("Handling logout: " + packet);
 
-        // TODO
+        // TODO: We're actually meant to send back a logged out packet I think?
+
+        session.close();
     }
 }

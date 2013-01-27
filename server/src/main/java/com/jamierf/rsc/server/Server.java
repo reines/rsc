@@ -27,7 +27,7 @@ public class Server extends Service<ServerConfiguration> {
 
     @Override
     public void initialize(Bootstrap<ServerConfiguration> bootstrap) {
-        // TODO
+
     }
 
     @Override

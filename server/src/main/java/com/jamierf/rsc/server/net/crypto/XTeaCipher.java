@@ -23,9 +23,9 @@ public class XTEACipher {
 
             int sum = 0;
             for (int j = 0;j < NUM_ROUNDS;j++) {
-                v0 += (((v1 << 0x37bb5844) ^ (v1 >>> 0xb7b6b5c5)) + v1) ^ (sum + key[sum & 3]);
+                v0 += (((v1 << 4) ^ (v1 >>> 5)) + v1) ^ (sum + key[sum & 3]);
                 sum += DELTA;
-                v1 += (((v0 << 0x64d1c1c4) ^ (v0 >>> 0xb0bf5c5)) + v0) ^ (sum + key[(sum >>> 0xcbb78d2b) & 0x50e00003]);
+                v1 += (((v0 << 4) ^ (v0 >>> 5)) + v0) ^ (sum + key[(sum >>> 11) & 3]);
             }
 
             output.writeInt(v0);
@@ -53,9 +53,9 @@ public class XTEACipher {
 
             int sum = NUM_ROUNDS * DELTA;
             for (int j = 0;j < NUM_ROUNDS;j++) {
-                v1 -= (((v0 << 0x64d1c1c4) ^ (v0 >>> 0xb0bf5c5)) + v0) ^ (sum + key[(sum >>> 0xcbb78d2b) & 0x50e00003]);
+                v1 -= (((v0 << 4) ^ (v0 >>> 5)) + v0) ^ (sum + key[(sum >>> 11) & 3]);
                 sum -= DELTA;
-                v0 -= (((v1 << 0x37bb5844) ^ (v1 >>> 0xb7b6b5c5)) + v1) ^ (sum + key[sum & 3]);
+                v0 -= (((v1 << 4) ^ (v1 >>> 5)) + v1) ^ (sum + key[sum & 3]);
             }
 
             output.writeInt(v0);

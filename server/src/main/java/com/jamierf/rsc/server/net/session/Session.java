@@ -30,7 +30,8 @@ public class Session implements Closeable {
             if (!allowExisting)
                 return false;
 
-            // TODO: We should ensure that the old session is dead
+            // Ensure that the old connection is dead
+            this.channel.close().awaitUninterruptibly();
         }
 
         // Enable packet rotation on the packet decoder

@@ -20,9 +20,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
@@ -109,7 +107,7 @@ public class GameClient extends JPanel implements Runnable {
             final Class<Applet> clazz = client.toClass(loader, GameClient.class.getProtectionDomain());
 
             // Find all big integers from the game client
-            final ImmutableList<Field> bigIntegers = GameClient.findEncryptionKeys(loader, loader.getClassNames());
+            final ImmutableList<Field> bigIntegers = GameClient.findEncryptionKeys(loader, loader.listClassNames());
             if (bigIntegers.size() != 2)
                 throw new GameClientModificationException("Unable to find encryption keys in client");
 
@@ -172,7 +170,7 @@ public class GameClient extends JPanel implements Runnable {
         field.setAccessible(accessible);
     }
 
-    private static ImmutableList<Field> findEncryptionKeys(ClassLoader loader, Iterable<String> classNames) throws ClassNotFoundException {
+    private static ImmutableList<Field> findEncryptionKeys(ClassLoader loader, Collection<String> classNames) throws ClassNotFoundException {
         final List<Field> fields = Lists.newArrayList();
 
         for (String className : classNames) {

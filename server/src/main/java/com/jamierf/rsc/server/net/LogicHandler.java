@@ -119,7 +119,5 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
         DISCONNECTION_METER.mark();
 
         System.err.println(e);
-
-        // TODO: Remove this session
     }
 }

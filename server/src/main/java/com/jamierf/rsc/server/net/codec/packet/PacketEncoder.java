@@ -107,16 +107,16 @@ public class PacketEncoder extends OneToOneEncoder {
         // Write the length header
         PacketEncoder.writeLength(length + 1, buffer);
         if (length >= 160) {
-            buffer.writeByte(id); // TODO: unsigned?
+            buffer.writeByte(id);
             buffer.writeBytes(payload);
         }
         else if (length >= 2) {
             buffer.writeBytes(payload, length - 1, 1);
-            buffer.writeByte(id); // TODO: unsigned
+            buffer.writeByte(id);
             buffer.writeBytes(payload, 0, length - 1);
         }
         else {
-            buffer.writeByte(id); // TODO: unsigned
+            buffer.writeByte(id);
         }
 
         PACKET_SIZE_HISTOGRAM.update(length);

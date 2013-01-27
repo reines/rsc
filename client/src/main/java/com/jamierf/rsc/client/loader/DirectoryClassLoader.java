@@ -1,11 +1,10 @@
 package com.jamierf.rsc.client.loader;
 
 import com.google.common.base.Function;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Collections2;
 import javassist.ClassPath;
 import javassist.NotFoundException;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,10 +12,11 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 public class DirectoryClassLoader extends URLClassLoader implements ClassPath {
+
+    private static final String CLASS_FILE_EXTENSION = "class";
 
     private final File file;
 
@@ -34,12 +34,14 @@ public class DirectoryClassLoader extends URLClassLoader implements ClassPath {
 
     @Override
     public InputStream openClassfile(String classname) throws NotFoundException {
-        return super.getResourceAsStream(classname.concat(".class"));
+        classname = classname.concat(".").concat(CLASS_FILE_EXTENSION);
+        return super.getResourceAsStream(classname);
     }
 
     @Override
     public URL find(String classname) {
-        return super.findResource(classname.concat(".class"));
+        classname = classname.concat(".").concat(CLASS_FILE_EXTENSION);
+        return super.findResource(classname);
     }
 
     @Override
@@ -52,15 +54,18 @@ public class DirectoryClassLoader extends URLClassLoader implements ClassPath {
         }
     }
 
-    public Iterable<String> getClassNames() {
-        // Note: Doesn't handle packages!
-        final List<String> files = Lists.transform(Arrays.asList(file.list()), new Function<String, String>() {
+    public Collection<String> listClassNames() {
+        final Collection<File> files = FileUtils.listFiles(file, new String[]{ CLASS_FILE_EXTENSION }, true);
+
+        final int pathLength = file.getAbsolutePath().length() + 1; // + 1 accounts for the trailing slash
+        final int extensionLength = CLASS_FILE_EXTENSION.length() + 1; // + 1 accounts for the period of the extension
+
+        return Collections2.transform(files, new Function<File, String>() {
             @Override
-            public String apply(String input) {
-                return input.endsWith(".class") ? input.substring(0, input.length() - 6) : null;
+            public String apply(File input) {
+                final String name = input.getAbsolutePath();
+                return name.substring(pathLength, name.length() - extensionLength).replaceAll(File.separator, ".");
             }
         });
-
-        return Iterables.filter(files, Predicates.notNull());
     }
 }
