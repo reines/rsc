@@ -34,10 +34,7 @@ public class SessionResource {
         sessionHashFunction = Hashing.goodFastHash(Long.SIZE);
     }
 
-    private LoginStatus validateUser(User user, byte[] password) {
-        if (!user.isPasswordMatch(password))
-            return LoginStatus.INVALID_CREDENTIALS;
-
+    private LoginStatus validateUser(User user) {
         if (user.isBanned())
             return LoginStatus.ACCOUNT_BANNED;
 
@@ -63,11 +60,11 @@ public class SessionResource {
     }
 
     private SessionData login(String username, byte[] password, int[] keys) {
-        final Optional<User> user = userDAO.findByUsername(username);
+        final Optional<User> user = userDAO.findByCredentials(username, password);
         if (!user.isPresent())
             return SessionData.createInvalidSession(LoginStatus.INVALID_CREDENTIALS);
 
-        final LoginStatus status = this.validateUser(user.get(), password);
+        final LoginStatus status = this.validateUser(user.get());
         if (!status.isSuccess())
             return SessionData.createInvalidSession(status);
 

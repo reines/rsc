@@ -1,19 +1,24 @@
 package com.jamierf.rsc.dataserver.service.db;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.jamierf.rsc.dataserver.api.UserData;
 import org.hibernate.annotations.Index;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Arrays;
 
 @Entity
 public class User extends UserData implements Serializable {
 
-    private static byte[] hash(byte[] password) {
-        return Hashing.sha512().hashBytes(password).asBytes();
+    protected static final String USERNAME_FIELD = "username";
+    protected static final String PASSWORD_FIELD = "password";
+
+    private static final HashFunction HASH_FUNCTION = Hashing.sha512();
+
+    public static byte[] hashPassword(byte[] password) {
+        return HASH_FUNCTION.hashBytes(password).asBytes();
     }
 
     private byte[] passwordHash;
@@ -22,7 +27,7 @@ public class User extends UserData implements Serializable {
 
     protected User(String username, byte[] password) {
         super.setUsername(username);
-        this.setPasswordHash(User.hash(password));
+        this.setPasswordHash(User.hashPassword(password));
     }
 
     @Id
@@ -31,14 +36,14 @@ public class User extends UserData implements Serializable {
         return super.getUserId();
     }
 
-    @Column( unique = true, nullable = false )
+    @Column( unique = true, nullable = false, name = USERNAME_FIELD )
     @Index( name = "username_idx" )
     @Override
     public String getUsername() {
         return super.getUsername();
     }
 
-    @Column ( nullable = false )
+    @Column ( nullable = false, name = PASSWORD_FIELD )
     @JsonIgnore
     protected byte[] getPasswordHash() {
         return passwordHash;
@@ -82,9 +87,5 @@ public class User extends UserData implements Serializable {
     @Override
     public boolean isModerator() {
         return super.isModerator();
-    }
-
-    public boolean isPasswordMatch(byte[] attempt) {
-        return Arrays.equals(User.hash(attempt), passwordHash);
     }
 }
