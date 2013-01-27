@@ -100,26 +100,28 @@ public class PacketEncoder extends OneToOneEncoder {
             id = packetRotator.rotateOutgoing(id);
 
         final ChannelBuffer payload = PacketEncoder.encodePacket(type, packet);
-        final int length = payload.readableBytes();
 
-        final ChannelBuffer buffer = ChannelBuffers.buffer(length + 3);
+        final int payloadLength = payload.readableBytes(); // length of the payload
+        final int packetLength = payloadLength + 1; // + 1 for the ID
+
+        final ChannelBuffer buffer = ChannelBuffers.buffer(packetLength + 2); // allocate a buffer for packet + length header
 
         // Write the length header
-        PacketEncoder.writeLength(length + 1, buffer);
-        if (length >= 160) {
+        PacketEncoder.writeLength(packetLength, buffer);
+        if (packetLength >= 160) {
             buffer.writeByte(id);
             buffer.writeBytes(payload);
         }
-        else if (length >= 2) {
-            buffer.writeBytes(payload, length - 1, 1);
+        else if (packetLength >= 2) {
+            buffer.writeBytes(payload, payloadLength - 1, 1);
             buffer.writeByte(id);
-            buffer.writeBytes(payload, 0, length - 1);
+            buffer.writeBytes(payload, 0, payloadLength - 1);
         }
         else {
             buffer.writeByte(id);
         }
 
-        PACKET_SIZE_HISTOGRAM.update(length);
+        PACKET_SIZE_HISTOGRAM.update(packetLength);
         return buffer;
     }
 }
