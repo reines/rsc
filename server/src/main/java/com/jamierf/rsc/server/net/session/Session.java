@@ -1,4 +1,4 @@
-package com.jamierf.rsc.server.net;
+package com.jamierf.rsc.server.net.session;
 
 import com.google.common.base.Objects;
 import com.jamierf.rsc.server.net.codec.PacketRotator;
@@ -7,35 +7,35 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 
 import java.io.Closeable;
-import java.security.SecureRandom;
 
 public class Session implements Closeable {
 
-    private static final SecureRandom random = new SecureRandom();
-
-    private static long generateUniqueId() {
-        return random.nextLong();
-    }
-
-    private final Channel channel;
+    private final long id;
     private final String username;
-    private final long sessionId;
     private final PacketRotator packetRotator;
 
-    public Session(Channel channel, String username, int[] sessionKeys) {
-        this.channel = channel;
-        this.username = username;
+    private Channel channel;
 
-        sessionId = Session.generateUniqueId();
-        packetRotator = new PacketRotator(sessionKeys);
+    public Session(long id, String username, PacketRotator packetRotator) {
+        this.id = id;
+        this.username = username;
+        this.packetRotator = packetRotator;
+    }
+
+    protected synchronized void moveChannel(Channel channel) {
+        if (this.channel != null) {
+            // TODO: We should ensure that the old session is dead
+        }
+
+        this.channel = channel;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public long getSessionId() {
-        return sessionId;
+    public long getId() {
+        return id;
     }
 
     public PacketRotator getPacketRotator() {
@@ -49,8 +49,9 @@ public class Session implements Closeable {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("sessionId", sessionId)
+                .add("id", id)
                 .add("channel", channel)
+                .add("username", username)
                 .toString();
     }
 
@@ -61,14 +62,14 @@ public class Session implements Closeable {
 
         Session session = (Session) o;
 
-        if (sessionId != session.sessionId) return false;
+        if (id != session.id) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return (int) (sessionId ^ (sessionId >>> 32));
+        return (int) (id ^ (id >>> 32));
     }
 
     @Override

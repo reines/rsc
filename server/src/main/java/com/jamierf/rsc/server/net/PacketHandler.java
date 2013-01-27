@@ -1,6 +1,7 @@
 package com.jamierf.rsc.server.net;
 
 import com.jamierf.rsc.server.net.codec.packet.Packet;
+import com.jamierf.rsc.server.net.session.Session;
 import org.jboss.netty.channel.ChannelHandlerContext;
 
 public abstract class PacketHandler<T extends Packet> {

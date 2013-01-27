@@ -3,17 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
+        <artifactId>dataserver</artifactId>
         <groupId>com.jamierf.rsc</groupId>
-        <artifactId>parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>server</artifactId>
+    <artifactId>dataserver-service</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>dataserver-client</artifactId>
+            <artifactId>dataserver-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -22,19 +22,19 @@
             <version>${dropwizard.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-            <version>${netty.version}</version>
+            <groupId>com.yammer.dropwizard</groupId>
+            <artifactId>dropwizard-hibernate</artifactId>
+            <version>${dropwizard.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>${commons-math.version}</version>
+            <groupId>com.yammer.dropwizard</groupId>
+            <artifactId>dropwizard-auth</artifactId>
+            <version>${dropwizard.version}</version>
         </dependency>
         <dependency>
-            <groupId>bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
-            <version>${bouncycastle.version}</version>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql-connector.version}</version>
         </dependency>
     </dependencies>
 </project>

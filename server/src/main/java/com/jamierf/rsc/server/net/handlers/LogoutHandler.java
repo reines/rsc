@@ -1,7 +1,7 @@
 package com.jamierf.rsc.server.net.handlers;
 
 import com.jamierf.rsc.server.net.PacketHandler;
-import com.jamierf.rsc.server.net.Session;
+import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.packet.LogoutRequestPacket;
 import org.jboss.netty.channel.ChannelHandlerContext;
 

@@ -2,6 +2,7 @@ package com.jamierf.rsc.server.net;
 
 import com.google.common.collect.Maps;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
+import com.jamierf.rsc.server.net.session.Session;
 import org.jboss.netty.channel.*;
 
 import java.util.Map;

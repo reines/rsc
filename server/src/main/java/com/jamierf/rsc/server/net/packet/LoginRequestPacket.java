@@ -1,6 +1,7 @@
 package com.jamierf.rsc.server.net.packet;
 
 import com.google.common.base.Objects;
+import com.jamierf.rsc.server.net.codec.field.StringFieldCodec;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
 import com.jamierf.rsc.server.net.codec.packet.PacketDecoder;
 import com.jamierf.rsc.server.net.crypto.RSACipher;
@@ -24,8 +25,8 @@ public class LoginRequestPacket extends Packet {
             return new int[]{ sessionKey1, sessionKey2, sessionKey3, sessionKey4 };
         }
 
-        public char[] getPassword() {
-            return password.trim().toCharArray();
+        public byte[] getPassword() {
+            return password.trim().getBytes(StringFieldCodec.CHARSET);
         }
     }
 

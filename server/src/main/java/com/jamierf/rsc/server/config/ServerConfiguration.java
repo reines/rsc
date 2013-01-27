@@ -1,6 +1,7 @@
 package com.jamierf.rsc.server.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.jamierf.rsc.dataserver.client.config.DataserverClientConfig;
 import com.yammer.dropwizard.config.Configuration;
 import org.bouncycastle.openssl.PEMReader;
 
@@ -23,11 +24,19 @@ public class ServerConfiguration extends Configuration {
     @NotNull
     private File privateKeyFile;
 
+    @JsonProperty
+    @NotNull
+    private DataserverClientConfig dataserver = new DataserverClientConfig();
+
     public int getPort() {
         return port;
     }
 
     public KeyPair getKeyPair() throws IOException {
         return (KeyPair) new PEMReader(new FileReader(privateKeyFile)).readObject();
+    }
+
+    public DataserverClientConfig getDataserverClientConfig() {
+        return dataserver;
     }
 }

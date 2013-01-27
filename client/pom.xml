@@ -9,12 +9,6 @@
     </parent>
 
     <artifactId>client</artifactId>
-    <name>RS Client</name>
-
-    <properties>
-        <javassist.version>3.17.1-GA</javassist.version>
-        <guava.version>14.0-rc2</guava.version>
-    </properties>
 
     <dependencies>
         <dependency>

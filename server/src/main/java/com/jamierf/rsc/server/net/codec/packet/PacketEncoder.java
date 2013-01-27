@@ -1,6 +1,6 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
-import com.jamierf.rsc.server.net.Session;
+import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.codec.field.FieldCodec;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
