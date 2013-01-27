@@ -10,7 +10,7 @@ public class StringFieldCodec extends FieldCodec<String> {
 
     public static final Charset CHARSET = Charset.forName("UTF-8");
 
-    private static final byte TERMINATOR = (byte) 0;
+    private static final byte TERMINATOR = (byte) 10;
 
     @Override
     public String decode(ChannelBuffer buffer) throws IOException {

@@ -1,7 +1,7 @@
 package com.jamierf.rsc.dataserver.api;
 
 public enum LoginStatus {
-    SUCCESSFUL_LOGIN(Byte.MAX_VALUE),
+    SUCCESSFUL_LOGIN(0),
 
     INVALID_CREDENTIALS(3),
     ALREADY_LOGGED_IN(4),

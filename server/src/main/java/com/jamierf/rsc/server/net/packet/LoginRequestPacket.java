@@ -18,10 +18,16 @@ public class LoginRequestPacket extends Packet {
         private int sessionKey2;
         private int sessionKey3;
         private int sessionKey4;
+        private int unknown2;
+        private String username;
         private String password;
 
         public int[] getSessionKeys() {
             return new int[]{ sessionKey1, sessionKey2, sessionKey3, sessionKey4 };
+        }
+
+        public String getUsername() {
+            return username.trim();
         }
 
         public String getPassword() {
@@ -29,25 +35,10 @@ public class LoginRequestPacket extends Packet {
         }
     }
 
-    public static class LoginData extends Packet {
-
-        private boolean limit30;
-        private String username;
-
-        public boolean isLimit30() {
-            return limit30;
-        }
-
-        public String getUsername() {
-            return username.trim();
-        }
-
-    }
-
     private boolean reconnecting;
-    private int clientVersion;
+    private short clientVersion;
+    private boolean limit30;
     private byte[] sessionData;
-    private byte[] loginData;
 
     public boolean isReconnecting() {
         return reconnecting;
@@ -57,18 +48,13 @@ public class LoginRequestPacket extends Packet {
         return clientVersion;
     }
 
+    public boolean isLimit30() {
+        return limit30;
+    }
+
     public SessionData decryptSessionData(RSAPrivateKey key) throws Exception {
         final ChannelBuffer payload = RSACipher.decrypt(sessionData, key);
         return PacketDecoder.decodePacket(SessionData.class, payload);
-    }
-
-    public LoginData decryptLoginData(int[] key) throws Exception {
-        final ChannelBuffer payload = XTEACipher.decrypt(loginData, key);
-
-        // Skip the first 24 bytes, they are padding...
-        payload.skipBytes(24);
-
-        return PacketDecoder.decodePacket(LoginData.class, payload);
     }
 
     @Override
@@ -76,6 +62,7 @@ public class LoginRequestPacket extends Packet {
         return Objects.toStringHelper(this)
                 .add("reconnecting", reconnecting)
                 .add("clientVersion", clientVersion)
+                .add("limit30", limit30)
                 .toString();
     }
 }

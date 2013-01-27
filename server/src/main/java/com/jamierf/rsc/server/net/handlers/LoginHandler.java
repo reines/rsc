@@ -73,10 +73,9 @@ public class LoginHandler extends PacketHandler<LoginRequestPacket> {
     @Override
     public void handle(ChannelHandlerContext ctx, Session session, LoginRequestPacket packet) throws Exception {
         final LoginRequestPacket.SessionData sessionData = packet.decryptSessionData(key);
-        final LoginRequestPacket.LoginData loginData = packet.decryptLoginData(sessionData.getSessionKeys());
 
         try {
-            final String username = loginData.getUsername();
+            final String username = sessionData.getUsername();
             final String password = sessionData.getPassword();
             final int[] keys = sessionData.getSessionKeys();
 
