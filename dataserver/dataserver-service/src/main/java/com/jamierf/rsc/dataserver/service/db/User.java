@@ -1,7 +1,12 @@
 package com.jamierf.rsc.dataserver.service.db;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import com.jamierf.rsc.dataserver.api.UserData;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Index;
 
 import javax.persistence.*;
@@ -12,13 +17,38 @@ public class User extends UserData implements Serializable {
 
     protected static final String USERNAME_FIELD = "username";
 
+    private static String capitalize(String input) {
+        final Iterable<String> lowercaseParts = Splitter.on(' ').split(input.toLowerCase());
+
+        final Iterable<String> capitalizedParts = Iterables.transform(lowercaseParts, new Function<String, String>() {
+            @Override
+            public String apply(String input) {
+                return StringUtils.capitalize(input);
+            }
+        });
+
+        return Joiner.on(' ').join(capitalizedParts);
+    }
+
+    public static String cleanUsername(String username) {
+        // Replace multiple whitespace with a single
+        username = username.replaceAll("\\s", " ");
+
+        // Trim any whitespace from the ends
+        username = username.trim();
+
+        // Lowercase then capitalize the first letter of every word
+        username = User.capitalize(username);
+
+        return username;
+    }
+
     private Password password;
 
     protected User() { }
 
     protected User(String username, String password) {
-        super.setUsername(username);
-
+        super.username = username;
         this.password = new Password(password);
     }
 

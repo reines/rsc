@@ -40,6 +40,9 @@ public class UserResource {
             if (!UserCredentials.isValid(username, password))
                 return Response.status(Response.Status.BAD_REQUEST).build();
 
+            // Clean the username before attempting to find it
+            username = User.cleanUsername(username);
+
             // TODO: Validate the username and password matches criteria
 
             final User user = userDAO.create(username, password);
@@ -62,6 +65,9 @@ public class UserResource {
         try {
             if (Strings.isNullOrEmpty(username))
                 return Response.status(Response.Status.BAD_REQUEST).build();
+
+            // Clean the username before attempting to find it
+            username = User.cleanUsername(username);
 
             final Optional<User> user = userDAO.findByUsername(username);
             if (!user.isPresent())

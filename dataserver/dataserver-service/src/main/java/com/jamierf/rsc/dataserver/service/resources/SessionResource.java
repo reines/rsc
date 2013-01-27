@@ -70,6 +70,9 @@ public class SessionResource {
         if (!SessionCredentials.isValid(username, password, keys))
             return SessionData.createInvalidSession(LoginStatus.LOGIN_SERVER_MISMATCH);
 
+        // Clean the username before attempting to find it
+        username = User.cleanUsername(username);
+
         final Optional<User> user = userDAO.findByCredentials(username, password);
         if (!user.isPresent())
             return SessionData.createInvalidSession(LoginStatus.INVALID_CREDENTIALS);

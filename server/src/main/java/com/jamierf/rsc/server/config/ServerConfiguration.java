@@ -33,7 +33,9 @@ public class ServerConfiguration extends Configuration {
     }
 
     public KeyPair getKeyPair() throws IOException {
-        return (KeyPair) new PEMReader(new FileReader(privateKeyFile)).readObject();
+        try (final PEMReader reader = new PEMReader(new FileReader(privateKeyFile))) {
+            return (KeyPair) reader.readObject();
+        }
     }
 
     public DataserverClientConfig getDataserverClientConfig() {
