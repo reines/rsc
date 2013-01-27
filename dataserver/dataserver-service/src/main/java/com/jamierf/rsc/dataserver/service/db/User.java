@@ -11,7 +11,6 @@ import java.io.Serializable;
 public class User extends UserData implements Serializable {
 
     protected static final String USERNAME_FIELD = "username";
-    protected static final String PASSWORD_FIELD = "password";
 
     private Password password;
 
@@ -36,7 +35,7 @@ public class User extends UserData implements Serializable {
         return super.getUsername();
     }
 
-    @Column ( nullable = false, name = PASSWORD_FIELD )
+    @Basic
     @JsonIgnore
     protected Password getPassword() {
         return password;

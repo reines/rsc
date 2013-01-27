@@ -7,7 +7,7 @@ import com.yammer.dropwizard.hibernate.HibernateBundle;
 public class DataserverHibernateBundle extends HibernateBundle<DataserverConfiguration> {
 
     public DataserverHibernateBundle() {
-        super(User.class);
+        super(User.class, Password.class);
     }
 
     @Override

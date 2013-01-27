@@ -1,55 +1,43 @@
 package com.jamierf.rsc.dataserver.service.db;
 
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
+import org.mindrot.jbcrypt.BCrypt;
 
 import javax.persistence.Basic;
-import javax.persistence.Entity;
+import javax.persistence.Embeddable;
 import java.io.Serializable;
-import java.security.SecureRandom;
-import java.util.Arrays;
 
-@Entity
+@Embeddable
 public class Password implements Serializable {
 
-    public static final int DEFAULT_ITERATIONS = 100;
-
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final HashFunction HASH_FUNCTION = Hashing.sha512();
-
-    private static byte[] hash(int salt, byte[] input) {
-        final Hasher hasher = HASH_FUNCTION.newHasher();
-
-        hasher.putInt(salt);
-        hasher.putBytes(input);
-
-        return hasher.hash().asBytes();
-    }
-
-    @Basic
-    private int salt;
-
-    @Basic
-    private int iterations;
-
-    @Basic
-    private byte[] hash;
+    private String salt;
+    private String hash;
 
     protected Password() { }
 
     public Password(String input) {
-        salt = SECURE_RANDOM.nextInt();
-        iterations = DEFAULT_ITERATIONS;
-        hash = this.hash(input);
+        salt = BCrypt.gensalt();
+        hash = BCrypt.hashpw(input, salt);
     }
 
     public boolean isMatch(String input) {
-        final byte[] hash = this.hash(input);
-        return Arrays.equals(this.hash, hash);
+        return BCrypt.checkpw(input, hash);
     }
 
-    private byte[] hash(String input) {
-        
+    @Basic
+    protected String getSalt() {
+        return salt;
+    }
+
+    protected void setSalt(String salt) {
+        this.salt = salt;
+    }
+
+    @Basic
+    protected String getHash() {
+        return hash;
+    }
+
+    protected void setHash(String hash) {
+        this.hash = hash;
     }
 }
