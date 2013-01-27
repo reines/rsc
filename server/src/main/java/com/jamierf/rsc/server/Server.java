@@ -6,6 +6,7 @@ import com.jamierf.rsc.server.net.ClientAcceptor;
 import com.jamierf.rsc.server.net.handlers.LoginHandler;
 import com.jamierf.rsc.server.net.handlers.LogoutHandler;
 import com.jamierf.rsc.server.net.handlers.SessionHandler;
+import com.jamierf.rsc.server.net.handlers.PingHandler;
 import com.jamierf.rsc.server.net.session.SessionManager;
 import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.client.JerseyClientBuilder;
@@ -47,6 +48,7 @@ public class Server extends Service<ServerConfiguration> {
 
         // TODO: This should really be handled in some kind of configuration?
         acceptor.addPacketHandler(32, new SessionHandler());
+        acceptor.addPacketHandler(67, new PingHandler());
         acceptor.addPacketHandler(0, new LoginHandler(sessionManager, (RSAPrivateKey) config.getKeyPair().getPrivate()));
         acceptor.addPacketHandler(29, new LogoutHandler());
     }
