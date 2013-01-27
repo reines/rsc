@@ -2,7 +2,7 @@ database:
   driverClass: com.mysql.jdbc.Driver
   user: dataserver
   password: supersecret
-  url: jdbc:mysql://localhost/dataserver
+  url: jdbc:mysql://dataserver/dataserver
 
   properties:
     hibernate.hbm2ddl.auto: update

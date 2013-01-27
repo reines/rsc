@@ -13,6 +13,12 @@ public class DataserverClientConfig {
     @JsonProperty
     private URI root;
 
+    public DataserverClientConfig() { }
+
+    public DataserverClientConfig(URI root) {
+        this.root = root;
+    }
+
     public JerseyClientConfiguration getJerseyClientConfiguration() {
         return jersey;
     }

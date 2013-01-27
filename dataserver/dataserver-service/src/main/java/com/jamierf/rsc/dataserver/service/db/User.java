@@ -1,6 +1,8 @@
 package com.jamierf.rsc.dataserver.service.db;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.hash.Hashing;
+import com.jamierf.rsc.dataserver.api.UserData;
 import org.hibernate.annotations.Index;
 
 import javax.persistence.*;
@@ -8,63 +10,81 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 @Entity
-public class User implements Serializable {
+public class User extends UserData implements Serializable {
 
     private static byte[] hash(byte[] password) {
         return Hashing.sha512().hashBytes(password).asBytes();
     }
 
+    private byte[] passwordHash;
+
+    protected User() { }
+
+    protected User(String username, byte[] password) {
+        super.setUsername(username);
+        this.setPasswordHash(User.hash(password));
+    }
+
     @Id
     @GeneratedValue
-    private long id;
+    public long getUserId() {
+        return super.getUserId();
+    }
 
     @Column( unique = true, nullable = false )
     @Index( name = "username_idx" )
-    private String username;
-
-    @Basic
-    private byte[] password;
-
-    @Basic
-    private short status;
-
-    protected User() {}
-
-    protected User(String username, byte[] password) {
-        this.username = username;
-        this.password = User.hash(password);
-        this.status = 0;
-    }
-
-    public long getId() {
-        return id;
-    }
-
+    @Override
     public String getUsername() {
-        return username;
+        return super.getUsername();
     }
 
+    @Column ( nullable = false )
+    @JsonIgnore
+    protected byte[] getPasswordHash() {
+        return passwordHash;
+    }
+
+    protected void setPasswordHash(byte[] passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    @Basic
+    @Override
     public boolean isBanned() {
-        return (status & 0x01) > 0;
+        return super.isBanned();
     }
 
+    @Basic
+    @Override
     public boolean isSuspended() {
-        return (status & 0x02) > 0;
+        return super.isSuspended();
     }
 
+    @Basic
+    @Override
     public boolean isMember() {
-        return (status & 0x03) > 0;
+        return super.isMember();
     }
 
+    @Basic
+    @Override
     public boolean isSuspectedStolen() {
-        return (status & 0x04) > 0;
+        return super.isSuspectedStolen();
     }
 
+    @Basic
+    @Override
     public boolean isVeteran() {
-        return (status & 0x05) > 0;
+        return super.isVeteran();
+    }
+
+    @Basic
+    @Override
+    public boolean isModerator() {
+        return super.isModerator();
     }
 
     public boolean isPasswordMatch(byte[] attempt) {
-        return Arrays.equals(User.hash(attempt), password);
+        return Arrays.equals(User.hash(attempt), passwordHash);
     }
 }

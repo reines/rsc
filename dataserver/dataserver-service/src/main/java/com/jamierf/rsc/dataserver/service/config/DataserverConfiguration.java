@@ -9,7 +9,14 @@ public class DataserverConfiguration extends Configuration {
     @JsonProperty
     private DatabaseConfiguration database = new DatabaseConfiguration();
 
+    @JsonProperty
+    private String sessionSecret = "";
+
     public DatabaseConfiguration getDatabaseConfiguration() {
         return database;
+    }
+
+    public String getSessionSecret() {
+        return sessionSecret;
     }
 }

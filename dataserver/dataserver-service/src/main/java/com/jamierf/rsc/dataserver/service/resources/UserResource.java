@@ -1,6 +1,8 @@
 package com.jamierf.rsc.dataserver.service.resources;
 
 import com.google.common.base.Optional;
+import com.jamierf.rsc.dataserver.api.UserCredentials;
+import com.jamierf.rsc.dataserver.api.UserData;
 import com.jamierf.rsc.dataserver.service.db.User;
 import com.jamierf.rsc.dataserver.service.db.UserDAO;
 import com.yammer.dropwizard.hibernate.UnitOfWork;
@@ -23,12 +25,10 @@ public class UserResource {
 
     @PUT
     @UnitOfWork ( transactional = true )
-    public Response create(
-            @FormParam("username") String username,
-            @FormParam("password") String password) {
+    public Response create(UserCredentials credentials) {
         try {
-            final User user = userDAO.create(username, password.getBytes());
-            return Response.status(Response.Status.OK).entity(user).build();
+            final User user = userDAO.create(credentials.getUsername(), credentials.getPassword());
+            return Response.status(Response.Status.OK).entity((UserData) user).build();
         }
         catch (ConstraintViolationException e) {
             return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
@@ -43,6 +43,6 @@ public class UserResource {
         if (!user.isPresent())
             return Response.status(Response.Status.NOT_FOUND).build();
 
-        return Response.status(Response.Status.OK).entity(user.get()).build();
+        return Response.status(Response.Status.OK).entity((UserData) user.get()).build();
     }
 }

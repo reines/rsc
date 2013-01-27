@@ -46,6 +46,5 @@ public class Server extends Service<ServerConfiguration> {
         // TODO: This should really be handled in some kind of configuration?
         acceptor.addPacketHandler(0, new LoginHandler(sessionManager, (RSAPrivateKey) config.getKeyPair().getPrivate()));
         acceptor.addPacketHandler(29, new LogoutHandler());
-
     }
 }

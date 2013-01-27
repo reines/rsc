@@ -15,5 +15,7 @@ public class LogoutHandler extends PacketHandler<LogoutRequestPacket> {
     @Override
     public void handle(ChannelHandlerContext ctx, Session session, LogoutRequestPacket packet) {
         System.err.println("Handling logout: " + packet);
+
+        // TODO
     }
 }

@@ -22,12 +22,17 @@ public class Session implements Closeable {
         this.packetRotator = packetRotator;
     }
 
-    protected synchronized void moveChannel(Channel channel) {
+    protected synchronized boolean moveChannel(Channel channel, boolean allowExisting) {
         if (this.channel != null) {
+            // There is already an existing channel, and we don't allow that
+            if (!allowExisting)
+                return false;
+
             // TODO: We should ensure that the old session is dead
         }
 
         this.channel = channel;
+        return true;
     }
 
     public String getUsername() {

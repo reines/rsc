@@ -30,7 +30,7 @@ public class Dataserver extends Service<DataserverConfiguration> {
     public void run(DataserverConfiguration config, Environment env) throws Exception {
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
 
-        env.addResource(new SessionResource(userDAO));
+        env.addResource(new SessionResource(userDAO, config.getSessionSecret()));
         env.addResource(new UserResource(userDAO));
     }
 }

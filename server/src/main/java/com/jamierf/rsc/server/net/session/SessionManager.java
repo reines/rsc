@@ -22,15 +22,15 @@ public class SessionManager implements Managed {
         sessions = Maps.newConcurrentMap(); // TODO: Ensure these fall out some timeout after they are closed (either locally or remotely)
     }
 
-    private synchronized Session getOrCreateSession(SessionData data, int[] keys, boolean reconnecting) {
+    private synchronized Session getOrCreateSession(SessionData data, int[] keys) {
         // If reconnecting and there is already a session for this client
-        if (reconnecting && sessions.containsKey(data.getId()))
-            return sessions.get(data.getId());
+        if (sessions.containsKey(data.getSessionId()))
+            return sessions.get(data.getSessionId());
 
         final PacketRotator packetRotator = new PacketRotator(keys);
 
         // Create a new session
-        final Session session = new Session(data.getId(), data.getUsername(), packetRotator);
+        final Session session = new Session(data.getSessionId(), data.getUsername(), packetRotator);
         sessions.put(session.getId(), session);
 
         return session;
@@ -41,13 +41,14 @@ public class SessionManager implements Managed {
             if (username.isEmpty() || password.length == 0)
                 throw new SessionCreationException(LoginStatus.INVALID_CREDENTIALS);
 
-            final SessionData data = client.requestLogin(username, password, keys);
+            final SessionData data = client.createSession(username, password, keys);
             if (!data.getStatus().isSuccess())
                 throw new SessionCreationException(data.getStatus());
 
             // Create (or retrieve existing) session
-            final Session session = this.getOrCreateSession(data, keys, reconnecting);
-            session.moveChannel(channel);
+            final Session session = this.getOrCreateSession(data, keys);
+            if (!session.moveChannel(channel, reconnecting))
+                throw new SessionCreationException(LoginStatus.SESSION_REJECTED);
 
             return session;
         }

@@ -1,8 +1,11 @@
 package com.jamierf.rsc.dataserver.service.resources;
 
 import com.google.common.base.Optional;
-import com.jamierf.rsc.dataserver.api.LoginCredentials;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import com.jamierf.rsc.dataserver.api.LoginStatus;
+import com.jamierf.rsc.dataserver.api.SessionCredentials;
 import com.jamierf.rsc.dataserver.api.SessionData;
 import com.jamierf.rsc.dataserver.service.db.User;
 import com.jamierf.rsc.dataserver.service.db.UserDAO;
@@ -20,14 +23,15 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class SessionResource {
 
-    public static long generateSessionId(long userId, int[] keys) {
-        return userId; // TODO: Generate a deterministic session id based on username and keys
-    }
-
     private final UserDAO userDAO;
+    private final String sessionSecret;
+    private final HashFunction sessionHashFunction;
 
-    public SessionResource(UserDAO userDAO) {
+    public SessionResource(UserDAO userDAO, String sessionSecret) {
         this.userDAO = userDAO;
+        this.sessionSecret = sessionSecret;
+
+        sessionHashFunction = Hashing.goodFastHash(Long.SIZE);
     }
 
     private LoginStatus validateUser(User user, byte[] password) {
@@ -46,22 +50,34 @@ public class SessionResource {
         return LoginStatus.SUCCESSFUL_LOGIN;
     }
 
+    public long generateSessionId(long userId, int[] keys, String secret) {
+        final Hasher hasher = sessionHashFunction.newHasher();
+
+        hasher.putLong(userId);
+        hasher.putString(secret);
+
+        for (int key : keys)
+            hasher.putInt(key);
+
+        return hasher.hash().asLong();
+    }
+
     private SessionData login(String username, byte[] password, int[] keys) {
         final Optional<User> user = userDAO.findByUsername(username);
         if (!user.isPresent())
-            return SessionData.invalidSession(LoginStatus.INVALID_CREDENTIALS);
+            return SessionData.createInvalidSession(LoginStatus.INVALID_CREDENTIALS);
 
         final LoginStatus status = this.validateUser(user.get(), password);
         if (!status.isSuccess())
-            return SessionData.invalidSession(status);
+            return SessionData.createInvalidSession(status);
 
-        final long sessionId = SessionResource.generateSessionId(user.get().getId(), keys);
-        return new SessionData(status, sessionId, user.get().getUsername(), user.get().isMember(), user.get().isVeteran());
+        final long sessionId = this.generateSessionId(user.get().getUserId(), keys, sessionSecret);
+        return SessionData.createValidSession(status, sessionId, user.get());
     }
 
     @PUT
     @UnitOfWork( transactional = true )
-    public Response login(LoginCredentials credentials) {
+    public Response login(SessionCredentials credentials) {
         final SessionData data = this.login(credentials.getUsername(), credentials.getPassword(), credentials.getKeys());
         return Response.status(Response.Status.OK).entity(data).build();
     }

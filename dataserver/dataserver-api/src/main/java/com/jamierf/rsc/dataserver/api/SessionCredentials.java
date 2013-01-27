@@ -3,33 +3,19 @@ package com.jamierf.rsc.dataserver.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class LoginCredentials {
-
-    @JsonProperty
-    private String username;
-
-    @JsonProperty
-    private byte[] password;
+public class SessionCredentials extends UserCredentials {
 
     @JsonProperty
     private int[] keys;
 
     @JsonCreator
-    public LoginCredentials(
+    public SessionCredentials(
             @JsonProperty("username") String username,
             @JsonProperty("password") byte[] password,
             @JsonProperty("keys") int[] keys) {
-        this.username = username;
-        this.password = password;
+        super(username, password);
+
         this.keys = keys;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public byte[] getPassword() {
-        return password;
     }
 
     public int[] getKeys() {
