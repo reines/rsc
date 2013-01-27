@@ -2,6 +2,7 @@ package com.jamierf.rsc.server.net;
 
 import com.google.common.collect.Maps;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
+import com.jamierf.rsc.server.net.codec.packet.PacketCodecException;
 import com.jamierf.rsc.server.net.session.Session;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Gauge;
@@ -23,6 +24,7 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
     private static final Meter DISCONNECTION_METER = Metrics.newMeter(LogicHandler.class, "disconnections", "requests", TimeUnit.SECONDS);
     private static final Meter EXCEPTION_METER = Metrics.newMeter(LogicHandler.class, "exceptions", "errors", TimeUnit.SECONDS);
     private static final Meter UNHANDLED_PACKET_METER = Metrics.newMeter(LogicHandler.class, "unhandled-packets", "errors", TimeUnit.SECONDS);
+    private static final Meter MALFORMED_PACKET_METER = Metrics.newMeter(LogicHandler.class, "malformed-packets", "errors", TimeUnit.SECONDS);
     private static final Meter MISSING_SESSION_METER = Metrics.newMeter(LogicHandler.class, "missing-sessions", "errors", TimeUnit.SECONDS);
 
     private final Map<Class<? extends Packet>, PacketHandler> handlers;
@@ -74,7 +76,7 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
             if (handler == null) {
                 UNHANDLED_PACKET_METER.mark();
 
-                System.err.println("no handler");
+                System.err.println("no handler"); // but we got this far which means it was a recognised packet type at least
                 return;
             }
 
@@ -104,6 +106,12 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
 
         final Throwable cause = e.getCause();
         cause.printStackTrace();
+
+        // If a client is sending bad packets disconnect them
+        if (cause instanceof PacketCodecException) {
+            MALFORMED_PACKET_METER.mark();
+            ctx.getChannel().close();
+        }
     }
 
     @Override
@@ -111,5 +119,7 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
         DISCONNECTION_METER.mark();
 
         System.err.println(e);
+
+        // TODO: Remove this session
     }
 }

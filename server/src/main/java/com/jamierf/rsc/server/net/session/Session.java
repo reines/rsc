@@ -1,8 +1,10 @@
 package com.jamierf.rsc.server.net.session;
 
 import com.google.common.base.Objects;
-import com.jamierf.rsc.server.net.codec.PacketRotator;
+import com.jamierf.rsc.server.net.codec.packet.PacketRotator;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
+import com.jamierf.rsc.server.net.codec.packet.PacketDecoder;
+import com.jamierf.rsc.server.net.codec.packet.PacketEncoder;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 
@@ -31,6 +33,14 @@ public class Session implements Closeable {
             // TODO: We should ensure that the old session is dead
         }
 
+        // Enable packet rotation on the packet decoder
+        final PacketDecoder decoder = (PacketDecoder) channel.getPipeline().get(PacketDecoder.NAME);
+        decoder.setPacketRotator(packetRotator);
+
+        // Enable packet rotation on the packet encoder
+        final PacketEncoder encoder = (PacketEncoder) channel.getPipeline().get(PacketEncoder.NAME);
+        encoder.setPacketRotator(packetRotator);
+
         this.channel = channel;
         return true;
     }
@@ -41,10 +51,6 @@ public class Session implements Closeable {
 
     public long getId() {
         return id;
-    }
-
-    public PacketRotator getPacketRotator() {
-        return packetRotator;
     }
 
     public ChannelFuture write(Packet packet) {

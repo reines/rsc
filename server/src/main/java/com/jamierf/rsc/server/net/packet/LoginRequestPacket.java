@@ -1,11 +1,10 @@
 package com.jamierf.rsc.server.net.packet;
 
 import com.google.common.base.Objects;
-import com.jamierf.rsc.server.net.codec.field.StringFieldCodec;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
 import com.jamierf.rsc.server.net.codec.packet.PacketDecoder;
 import com.jamierf.rsc.server.net.crypto.RSACipher;
-import com.jamierf.rsc.server.net.crypto.XTeaCipher;
+import com.jamierf.rsc.server.net.crypto.XTEACipher;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -25,8 +24,8 @@ public class LoginRequestPacket extends Packet {
             return new int[]{ sessionKey1, sessionKey2, sessionKey3, sessionKey4 };
         }
 
-        public byte[] getPassword() {
-            return password.trim().getBytes(StringFieldCodec.CHARSET);
+        public String getPassword() {
+            return password.trim();
         }
     }
 
@@ -64,7 +63,7 @@ public class LoginRequestPacket extends Packet {
     }
 
     public LoginData decryptLoginData(int[] key) throws Exception {
-        final ChannelBuffer payload = XTeaCipher.decrypt(loginData, key);
+        final ChannelBuffer payload = XTEACipher.decrypt(loginData, key);
 
         // Skip the first 24 bytes, they are padding...
         payload.skipBytes(24);

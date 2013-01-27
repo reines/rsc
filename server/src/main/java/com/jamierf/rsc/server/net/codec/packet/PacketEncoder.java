@@ -1,6 +1,5 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
-import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.codec.field.FieldCodec;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Histogram;
@@ -11,7 +10,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
@@ -44,7 +42,7 @@ public class PacketEncoder extends OneToOneEncoder {
         final Class<?> type = field.getType();
         final FieldCodec codec = FieldCodec.getInstance(type);
         if (codec == null)
-            throw new IOException("Unsupported field type: " + type);
+            throw new PacketCodecException("Unsupported field type: " + type);
 
         final boolean accessible = field.isAccessible();
 
@@ -66,9 +64,16 @@ public class PacketEncoder extends OneToOneEncoder {
     }
 
     private final Map<Class<? extends Packet>, Integer> packetTypes;
+    private PacketRotator packetRotator;
 
     public PacketEncoder(Map<Class<? extends Packet>, Integer> packetTypes) {
         this.packetTypes = packetTypes;
+
+        packetRotator = null;
+    }
+
+    public void setPacketRotator(PacketRotator packetRotator) {
+        this.packetRotator = packetRotator;
     }
 
     @Override
@@ -86,14 +91,13 @@ public class PacketEncoder extends OneToOneEncoder {
         final Class<? extends Packet> type = packet.getClass();
         if (!packetTypes.containsKey(type)) {
             UNRECOGNISED_PACKET_METER.mark();
-            throw new IOException("Unrecognised packet type: " + type);
+            throw new PacketCodecException("Unrecognised packet type: " + type);
         }
 
         int id = packetTypes.get(type);
 
-        final Session session = (Session) ctx.getAttachment();
-        if (session != null)
-            id = session.getPacketRotator().rotateOutgoing(id);
+        if (packetRotator != null)
+            id = packetRotator.rotateOutgoing(id);
 
         final ChannelBuffer payload = PacketEncoder.encodePacket(type, packet);
         final int length = payload.readableBytes();

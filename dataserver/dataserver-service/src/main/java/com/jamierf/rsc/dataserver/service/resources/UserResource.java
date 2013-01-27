@@ -1,6 +1,7 @@
 package com.jamierf.rsc.dataserver.service.resources;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.jamierf.rsc.dataserver.api.UserCredentials;
 import com.jamierf.rsc.dataserver.api.UserData;
 import com.jamierf.rsc.dataserver.service.db.User;
@@ -31,11 +32,17 @@ public class UserResource {
 
     @PUT
     @UnitOfWork ( transactional = true )
-    public Response create(UserCredentials credentials) {
+    @Path("/{username}")
+    public Response create(@PathParam("username") String username, @QueryParam("password") String password) {
         final TimerContext timer = CREATE_USER_TIMER.time();
 
         try {
-            final User user = userDAO.create(credentials.getUsername(), credentials.getPassword());
+            if (!UserCredentials.isValid(username, password))
+                return Response.status(Response.Status.BAD_REQUEST).build();
+
+            // TODO: Validate the username and password matches criteria
+
+            final User user = userDAO.create(username, password);
             return Response.status(Response.Status.OK).entity((UserData) user).build();
         }
         catch (ConstraintViolationException e) {
@@ -53,6 +60,9 @@ public class UserResource {
         final TimerContext timer = FIND_USER_TIMER.time();
 
         try {
+            if (Strings.isNullOrEmpty(username))
+                return Response.status(Response.Status.BAD_REQUEST).build();
+
             final Optional<User> user = userDAO.findByUsername(username);
             if (!user.isPresent())
                 return Response.status(Response.Status.NOT_FOUND).build();

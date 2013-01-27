@@ -2,6 +2,7 @@ package com.jamierf.rsc.server.net.handlers;
 
 import com.google.common.collect.Maps;
 import com.jamierf.rsc.dataserver.api.LoginStatus;
+import com.jamierf.rsc.dataserver.api.SessionCredentials;
 import com.jamierf.rsc.server.net.PacketHandler;
 import com.jamierf.rsc.server.net.packet.LoginRequestPacket;
 import com.jamierf.rsc.server.net.session.Session;
@@ -22,6 +23,7 @@ public class LoginHandler extends PacketHandler<LoginRequestPacket> {
 
     private static final Meter CONNECTION_METER = Metrics.newMeter(LoginHandler.class, "connections", "requests", TimeUnit.SECONDS);
     private static final Meter RECONNECTION_METER = Metrics.newMeter(LoginHandler.class, "reconnections", "requests", TimeUnit.SECONDS);
+    private static final Meter REJECTION_METER = Metrics.newMeter(LoginHandler.class, "rejections", "requests", TimeUnit.SECONDS);
 
     private static final Map<LoginStatus, Meter> STATUS_METER = Maps.newEnumMap(LoginStatus.class);
 
@@ -73,22 +75,34 @@ public class LoginHandler extends PacketHandler<LoginRequestPacket> {
         final LoginRequestPacket.SessionData sessionData = packet.decryptSessionData(key);
         final LoginRequestPacket.LoginData loginData = packet.decryptLoginData(sessionData.getSessionKeys());
 
-        // Mark is this is a connection or a reconnection
-        (packet.isReconnecting() ? RECONNECTION_METER : CONNECTION_METER).mark();
-
         try {
+            final String username = loginData.getUsername();
+            final String password = sessionData.getPassword();
+            final int[] keys = sessionData.getSessionKeys();
+
+            // TODO: Validate the client version is recognised
+
+            if (!SessionCredentials.isValid(username, password, keys))
+                throw new SessionCreationException(LoginStatus.INVALID_CREDENTIALS);
+
             // Create a session for this client
-            session = sessionManager.getSession(ctx.getChannel(), loginData.getUsername(), sessionData.getPassword(), sessionData.getSessionKeys(), packet.isReconnecting());
+            session = sessionManager.createSession(ctx.getChannel(), username, password, keys, packet.getClientVersion(), packet.isReconnecting());
             ctx.setAttachment(session);
 
             // Send successful login response to the client
             LoginHandler.sendLoginResponse(ctx, LoginStatus.SUCCESSFUL_LOGIN);
+
+            // Mark if this is a connection or a reconnection
+            (packet.isReconnecting() ? RECONNECTION_METER : CONNECTION_METER).mark();
 
             // TODO: Send them the required shit
         }
         catch (SessionCreationException e) {
             // Error creating session, let the client know then kill their connection
             LoginHandler.sendLoginResponse(ctx, e.getResponse());
+
+            // Mark this as a rejection
+            REJECTION_METER.mark();
         }
     }
 }

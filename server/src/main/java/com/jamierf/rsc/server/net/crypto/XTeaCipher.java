@@ -3,13 +3,13 @@ package com.jamierf.rsc.server.net.crypto;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-public class XTeaCipher {
+public class XTEACipher {
 
     private static final int NUM_ROUNDS = 32;
     private static final int DELTA = 0x9e3779b9;
 
     public static ChannelBuffer encrypt(byte[] data, int[] key) {
-        return XTeaCipher.encrypt(ChannelBuffers.wrappedBuffer(data), key);
+        return XTEACipher.encrypt(ChannelBuffers.wrappedBuffer(data), key);
     }
 
     public static ChannelBuffer encrypt(ChannelBuffer data, int[] key) {
@@ -39,7 +39,7 @@ public class XTeaCipher {
     }
 
     public static ChannelBuffer decrypt(byte[] data, int[] key) {
-        return XTeaCipher.decrypt(ChannelBuffers.wrappedBuffer(data), key);
+        return XTEACipher.decrypt(ChannelBuffers.wrappedBuffer(data), key);
     }
 
     public static ChannelBuffer decrypt(ChannelBuffer data, int[] key) {
@@ -68,5 +68,5 @@ public class XTeaCipher {
         return output;
     }
 
-    private XTeaCipher() { }
+    private XTEACipher() { }
 }

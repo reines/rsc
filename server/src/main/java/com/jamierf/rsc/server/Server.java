@@ -32,9 +32,6 @@ public class Server extends Service<ServerConfiguration> {
 
     @Override
     public void run(ServerConfiguration config, Environment env) throws Exception {
-        final ClientAcceptor acceptor = new ClientAcceptor(config.getPort());
-        env.manage(acceptor);
-
         // Create dataserver client
         final JerseyClientBuilder jerseyClientBuilder = new JerseyClientBuilder().using(env).using(config.getDataserverClientConfig().getJerseyClientConfiguration());
         final DataserverClient dataserverClient = new DataserverClient(jerseyClientBuilder.build(), config.getDataserverClientConfig());
@@ -42,6 +39,10 @@ public class Server extends Service<ServerConfiguration> {
         // Create session manager
         final SessionManager sessionManager = new SessionManager(dataserverClient);
         env.manage(sessionManager);
+
+        // Create blind acceptor
+        final ClientAcceptor acceptor = new ClientAcceptor(config.getPort());
+        env.manage(acceptor);
 
         // TODO: This should really be handled in some kind of configuration?
         acceptor.addPacketHandler(0, new LoginHandler(sessionManager, (RSAPrivateKey) config.getKeyPair().getPrivate()));

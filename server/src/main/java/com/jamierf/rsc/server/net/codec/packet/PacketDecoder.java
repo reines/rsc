@@ -1,6 +1,5 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
-import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.codec.field.FieldCodec;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Histogram;
@@ -11,7 +10,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
@@ -59,7 +57,7 @@ public class PacketDecoder extends FrameDecoder {
         final Class<?> type = field.getType();
         final FieldCodec codec = FieldCodec.getInstance(type);
         if (codec == null)
-            throw new IOException("Unsupported field type: " + type);
+            throw new PacketCodecException("Unsupported field type: " + type);
 
         final boolean accessible = field.isAccessible();
 
@@ -69,9 +67,16 @@ public class PacketDecoder extends FrameDecoder {
     }
 
     private final Map<Integer, Class<? extends Packet>> packetTypes;
+    private PacketRotator packetRotator;
 
     public PacketDecoder(Map<Integer, Class<? extends Packet>> packetTypes) {
         this.packetTypes = packetTypes;
+
+        packetRotator = null;
+    }
+
+    public void setPacketRotator(PacketRotator packetRotator) {
+        this.packetRotator = packetRotator;
     }
 
     @Override
@@ -111,15 +116,13 @@ public class PacketDecoder extends FrameDecoder {
             payload = ChannelBuffers.EMPTY_BUFFER;
         }
 
-        // If we have a client then perform packet rotation
-        final Session session = (Session) ctx.getAttachment();
-        if (session != null)
-            id = session.getPacketRotator().rotateIncoming(id);
+        if (packetRotator != null)
+            id = packetRotator.rotateIncoming(id);
 
         final Class<? extends Packet> type = packetTypes.get(id);
         if (type == null) {
             UNRECOGNISED_PACKET_METER.mark();
-            throw new IOException("Unrecognised packet: id = " + id);
+            throw new PacketCodecException("Unrecognised packet: id = " + id);
         }
 
         final Packet packet = PacketDecoder.decodePacket(type, payload);
@@ -127,7 +130,7 @@ public class PacketDecoder extends FrameDecoder {
         final int remaining = payload.readableBytes();
         if (remaining > 0) {
             OVERSIZE_PACKET_METER.mark();
-            throw new IOException("Buffer not empty (" + remaining + ") after decoding packet " + packet + ": " + payload);
+            throw new PacketCodecException("Buffer not empty (" + remaining + ") after decoding packet " + packet + ": " + payload);
         }
 
         PACKET_SIZE_HISTOGRAM.update(length);

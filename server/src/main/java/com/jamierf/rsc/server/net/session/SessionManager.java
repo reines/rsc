@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import com.jamierf.rsc.dataserver.api.LoginStatus;
 import com.jamierf.rsc.dataserver.api.SessionData;
 import com.jamierf.rsc.dataserver.client.DataserverClient;
-import com.jamierf.rsc.server.net.codec.PacketRotator;
+import com.jamierf.rsc.server.net.codec.packet.PacketRotator;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.jboss.netty.channel.Channel;
@@ -36,12 +36,9 @@ public class SessionManager implements Managed {
         return session;
     }
 
-    public Session getSession(Channel channel, String username, byte[] password, int[] keys, boolean reconnecting) throws SessionCreationException {
+    public Session createSession(Channel channel, String username, String password, int[] keys, int clientVersion, boolean reconnecting) throws SessionCreationException {
         try {
-            if (username.isEmpty() || password.length == 0)
-                throw new SessionCreationException(LoginStatus.INVALID_CREDENTIALS);
-
-            final SessionData data = client.createSession(username, password, keys);
+            final SessionData data = client.createSession(username, password, clientVersion, keys);
             if (!data.getStatus().isSuccess())
                 throw new SessionCreationException(data.getStatus());
 

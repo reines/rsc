@@ -46,7 +46,7 @@ public class UserDAO extends AbstractDAO<User> {
         }
     }
 
-    public Optional<User> findByCredentials(String username, byte[] password) {
+    public Optional<User> findByCredentials(String username, String password) {
         final TimerContext timer = FIND_BY_CREDENTIALS_TIMER.time();
 
         try {
@@ -62,7 +62,7 @@ public class UserDAO extends AbstractDAO<User> {
         }
     }
 
-    public User create(String username, byte[] password) {
+    public User create(String username, String password) {
         final TimerContext timer = CREATE_TIMER.time();
 
         try {

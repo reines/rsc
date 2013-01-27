@@ -17,17 +17,18 @@ public class User extends UserData implements Serializable {
 
     private static final HashFunction HASH_FUNCTION = Hashing.sha512();
 
-    public static byte[] hashPassword(byte[] password) {
-        return HASH_FUNCTION.hashBytes(password).asBytes();
+    public static byte[] hashPassword(String password) {
+        return HASH_FUNCTION.hashString(password).asBytes();
     }
 
-    private byte[] passwordHash;
+    private byte[] password;
 
     protected User() { }
 
-    protected User(String username, byte[] password) {
+    protected User(String username, String password) {
         super.setUsername(username);
-        this.setPasswordHash(User.hashPassword(password));
+
+        this.password = User.hashPassword(password);
     }
 
     @Id
@@ -45,12 +46,12 @@ public class User extends UserData implements Serializable {
 
     @Column ( nullable = false, name = PASSWORD_FIELD )
     @JsonIgnore
-    protected byte[] getPasswordHash() {
-        return passwordHash;
+    protected byte[] getPassword() {
+        return password;
     }
 
-    protected void setPasswordHash(byte[] passwordHash) {
-        this.passwordHash = passwordHash;
+    protected void setPassword(byte[] password) {
+        this.password = password;
     }
 
     @Basic

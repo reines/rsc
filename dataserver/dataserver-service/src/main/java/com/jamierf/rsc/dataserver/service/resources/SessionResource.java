@@ -1,6 +1,7 @@
 package com.jamierf.rsc.dataserver.service.resources;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
@@ -52,11 +53,12 @@ public class SessionResource {
         return LoginStatus.SUCCESSFUL_LOGIN;
     }
 
-    public long generateSessionId(long userId, int[] keys, String secret) {
+    public long generateSessionId(long userId, int[] keys, int clientVersion, String secret) {
         final Hasher hasher = sessionHashFunction.newHasher();
 
         hasher.putLong(userId);
         hasher.putString(secret);
+        hasher.putInt(clientVersion);
 
         for (int key : keys)
             hasher.putInt(key);
@@ -64,7 +66,10 @@ public class SessionResource {
         return hasher.hash().asLong();
     }
 
-    private SessionData login(String username, byte[] password, int[] keys) {
+    private SessionData login(String username, String password, int clientVersion, int[] keys) {
+        if (!SessionCredentials.isValid(username, password, keys))
+            return SessionData.createInvalidSession(LoginStatus.LOGIN_SERVER_MISMATCH);
+
         final Optional<User> user = userDAO.findByCredentials(username, password);
         if (!user.isPresent())
             return SessionData.createInvalidSession(LoginStatus.INVALID_CREDENTIALS);
@@ -73,7 +78,7 @@ public class SessionResource {
         if (!status.isSuccess())
             return SessionData.createInvalidSession(status);
 
-        final long sessionId = this.generateSessionId(user.get().getUserId(), keys, sessionSecret);
+        final long sessionId = this.generateSessionId(user.get().getUserId(), keys, clientVersion, sessionSecret);
         return SessionData.createValidSession(status, sessionId, user.get());
     }
 
@@ -83,7 +88,8 @@ public class SessionResource {
         final TimerContext timer = CREATE_SESSION_TIMER.time();
 
         try {
-            final SessionData data = this.login(credentials.getUsername(), credentials.getPassword(), credentials.getKeys());
+            final SessionData data = this.login(credentials.getUsername(), credentials.getPassword(),
+                    credentials.getClientVersion(), credentials.getKeys());
             return Response.status(Response.Status.OK).entity(data).build();
         }
         finally {
