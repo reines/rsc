@@ -15,7 +15,7 @@ public class ByteArrayFieldCodec extends FieldCodec<byte[]> {
 
     @Override
     public void encode(byte[] value, ChannelBuffer buffer) {
-        buffer.writeByte(value.length);
+        buffer.writeShort(value.length);
         buffer.writeBytes(value);
     }
 }
