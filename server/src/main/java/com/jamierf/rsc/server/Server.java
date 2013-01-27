@@ -7,6 +7,7 @@ import com.jamierf.rsc.server.net.handlers.LoginHandler;
 import com.jamierf.rsc.server.net.handlers.LogoutHandler;
 import com.jamierf.rsc.server.net.handlers.SessionHandler;
 import com.jamierf.rsc.server.net.handlers.PingHandler;
+import com.jamierf.rsc.server.net.packet.SystemMessagePacket;
 import com.jamierf.rsc.server.net.session.SessionManager;
 import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.client.JerseyClientBuilder;
@@ -51,5 +52,8 @@ public class Server extends Service<ServerConfiguration> {
         acceptor.addPacketHandler(67, new PingHandler());
         acceptor.addPacketHandler(0, new LoginHandler(sessionManager, (RSAPrivateKey) config.getKeyPair().getPrivate()));
         acceptor.addPacketHandler(29, new LogoutHandler());
+
+        // TODO: Register outgoing message types, these should also be in some config
+        acceptor.addPacketType(131, SystemMessagePacket.class);
     }
 }
