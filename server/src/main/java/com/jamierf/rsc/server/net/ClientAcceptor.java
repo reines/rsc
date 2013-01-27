@@ -61,7 +61,7 @@ public class ClientAcceptor implements Managed {
         if (channel == null)
             return;
 
-        channel.close();
+        channel.close().sync();
 
         ExecutorUtil.terminate(bossExecutor, workerExecutor);
     }
