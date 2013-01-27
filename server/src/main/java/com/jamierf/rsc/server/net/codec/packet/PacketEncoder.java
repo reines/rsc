@@ -2,6 +2,9 @@ package com.jamierf.rsc.server.net.codec.packet;
 
 import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.codec.field.FieldCodec;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Histogram;
+import com.yammer.metrics.core.Meter;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -12,10 +15,14 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PacketEncoder extends OneToOneEncoder {
 
     public static final String NAME = "packet-encoder";
+
+    private static final Meter UNRECOGNISED_PACKET_METER = Metrics.newMeter(PacketEncoder.class, "unrecognised-packets", "errors", TimeUnit.SECONDS);
+    private static final Histogram PACKET_SIZE_HISTOGRAM = Metrics.newHistogram(PacketEncoder.class, "packet-size");
 
     public static ChannelBuffer encodePacket(Class<? extends Packet> type, Packet packet) throws Exception {
         ChannelBuffer payload = ChannelBuffers.dynamicBuffer();
@@ -77,8 +84,10 @@ public class PacketEncoder extends OneToOneEncoder {
             return ((RawPacket) packet).buffer;
 
         final Class<? extends Packet> type = packet.getClass();
-        if (!packetTypes.containsKey(type))
+        if (!packetTypes.containsKey(type)) {
+            UNRECOGNISED_PACKET_METER.mark();
             throw new IOException("Unrecognised packet type: " + type);
+        }
 
         int id = packetTypes.get(type);
 
@@ -106,6 +115,7 @@ public class PacketEncoder extends OneToOneEncoder {
             buffer.writeByte(id); // TODO: unsigned
         }
 
+        PACKET_SIZE_HISTOGRAM.update(length);
         return buffer;
     }
 }

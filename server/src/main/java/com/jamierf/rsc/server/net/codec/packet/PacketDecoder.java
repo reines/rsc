@@ -2,6 +2,9 @@ package com.jamierf.rsc.server.net.codec.packet;
 
 import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.codec.field.FieldCodec;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Histogram;
+import com.yammer.metrics.core.Meter;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -12,10 +15,15 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PacketDecoder extends FrameDecoder {
 
     public static final String NAME = "packet-decoder";
+
+    private static final Meter OVERSIZE_PACKET_METER = Metrics.newMeter(PacketDecoder.class, "oversized-packets", "errors", TimeUnit.SECONDS);
+    private static final Meter UNRECOGNISED_PACKET_METER = Metrics.newMeter(PacketDecoder.class, "unrecognised-packets", "errors", TimeUnit.SECONDS);
+    private static final Histogram PACKET_SIZE_HISTOGRAM = Metrics.newHistogram(PacketDecoder.class, "packet-size");
 
     public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer payload) throws Exception {
         final T packet = type.newInstance();
@@ -77,7 +85,7 @@ public class PacketDecoder extends FrameDecoder {
 
         // Check we have enough content in the buffer
         final int length = PacketDecoder.readLength(buffer);
-        if (length <= 0 || buffer.readableBytes() < length) {
+        if (length < 0 || buffer.readableBytes() < length) {
             buffer.resetReaderIndex();
             return null;
         }
@@ -109,15 +117,20 @@ public class PacketDecoder extends FrameDecoder {
             id = session.getPacketRotator().rotateIncoming(id);
 
         final Class<? extends Packet> type = packetTypes.get(id);
-        if (type == null)
+        if (type == null) {
+            UNRECOGNISED_PACKET_METER.mark();
             throw new IOException("Unrecognised packet: id = " + id);
+        }
 
         final Packet packet = PacketDecoder.decodePacket(type, payload);
 
         final int remaining = payload.readableBytes();
-        if (remaining > 0)
+        if (remaining > 0) {
+            OVERSIZE_PACKET_METER.mark();
             throw new IOException("Buffer not empty (" + remaining + ") after decoding packet " + packet + ": " + payload);
+        }
 
+        PACKET_SIZE_HISTOGRAM.update(length);
         return packet;
     }
 }

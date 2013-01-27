@@ -10,6 +10,9 @@ import com.jamierf.rsc.dataserver.api.SessionData;
 import com.jamierf.rsc.dataserver.service.db.User;
 import com.jamierf.rsc.dataserver.service.db.UserDAO;
 import com.yammer.dropwizard.hibernate.UnitOfWork;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Timer;
+import com.yammer.metrics.core.TimerContext;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
@@ -22,6 +25,8 @@ import javax.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class SessionResource {
+
+    private static final Timer CREATE_SESSION_TIMER = Metrics.newTimer(SessionResource.class, "create");
 
     private final UserDAO userDAO;
     private final String sessionSecret;
@@ -75,7 +80,14 @@ public class SessionResource {
     @PUT
     @UnitOfWork( transactional = true )
     public Response login(SessionCredentials credentials) {
-        final SessionData data = this.login(credentials.getUsername(), credentials.getPassword(), credentials.getKeys());
-        return Response.status(Response.Status.OK).entity(data).build();
+        final TimerContext timer = CREATE_SESSION_TIMER.time();
+
+        try {
+            final SessionData data = this.login(credentials.getUsername(), credentials.getPassword(), credentials.getKeys());
+            return Response.status(Response.Status.OK).entity(data).build();
+        }
+        finally {
+            timer.stop();
+        }
     }
 }

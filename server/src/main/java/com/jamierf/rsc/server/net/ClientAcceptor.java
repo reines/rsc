@@ -5,7 +5,6 @@ import com.yammer.dropwizard.lifecycle.Managed;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.util.internal.ExecutorUtil;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
@@ -16,8 +15,7 @@ public class ClientAcceptor implements Managed {
 
     private final InetSocketAddress address;
     private final AtomicReference<Channel> channel;
-    private final ExecutorService bossExecutor;
-    private final ExecutorService workerExecutor;
+    private final ServerBootstrap bootstrap;
     private final LogicHandler logicHandler;
     private final ClientPipelineFactory pipelineFactory;
 
@@ -25,11 +23,15 @@ public class ClientAcceptor implements Managed {
         address = new InetSocketAddress(port);
         channel = new AtomicReference<Channel>();
 
-        bossExecutor = Executors.newCachedThreadPool();
-        workerExecutor = Executors.newCachedThreadPool();
-
         logicHandler = new LogicHandler();
         pipelineFactory = new ClientPipelineFactory(logicHandler);
+
+        final ExecutorService bossExecutor = Executors.newCachedThreadPool();
+        final ExecutorService workerExecutor = Executors.newCachedThreadPool();
+
+        bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(bossExecutor, workerExecutor));
+        bootstrap.setPipelineFactory(pipelineFactory);
+
     }
 
     public void addPacketHandler(int id, PacketHandler handler) {
@@ -47,11 +49,6 @@ public class ClientAcceptor implements Managed {
         if (channel.get() != null)
             throw new IllegalStateException("Cannot start client acceptor, already started");
 
-        final NioServerSocketChannelFactory serverSocketFactory = new NioServerSocketChannelFactory(bossExecutor, workerExecutor);
-        final ServerBootstrap bootstrap = new ServerBootstrap(serverSocketFactory);
-
-        bootstrap.setPipelineFactory(pipelineFactory);
-
         channel.set(bootstrap.bind(address));
     }
 
@@ -61,8 +58,8 @@ public class ClientAcceptor implements Managed {
         if (channel == null)
             return;
 
-        channel.close().sync();
-
-        ExecutorUtil.terminate(bossExecutor, workerExecutor);
+        channel.close().awaitUninterruptibly();
+        logicHandler.closeChannels().awaitUninterruptibly();
+        bootstrap.releaseExternalResources();
     }
 }
