@@ -49,7 +49,7 @@ public class CachingRemoteJarClassLoader extends URLClassLoader implements Class
         try (final JarInputStream in = new JarInputStream(new FileInputStream(localJar), true)) {
             for (ZipEntry entry; (entry = in.getNextEntry()) != null;) {
                 // Skip non class files
-                final String name = entry.getName(); // TODO: Handle packages, replace . (except extension) with /
+                final String name = entry.getName();
                 if (!name.endsWith(CLASS_FILE_EXTENSION))
                     continue;
 
