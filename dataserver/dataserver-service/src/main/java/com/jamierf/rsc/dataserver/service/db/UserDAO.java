@@ -50,12 +50,12 @@ public class UserDAO extends AbstractDAO<User> {
         final TimerContext timer = FIND_BY_CREDENTIALS_TIMER.time();
 
         try {
-            final Criteria criteria = super.criteria();
+            final Optional<User> user = this.findByUsername(username);
+            // There isn't such a user, or the password didn't match
+            if (!user.isPresent() || !user.get().isPasswordMatch(password))
+                return Optional.absent();
 
-            criteria.add(Restrictions.like(User.USERNAME_FIELD, username));
-            criteria.add(Restrictions.eq(User.PASSWORD_FIELD, User.hashPassword(password)));
-
-            return Optional.fromNullable(super.uniqueResult(criteria));
+            return user;
         }
         finally {
             timer.stop();

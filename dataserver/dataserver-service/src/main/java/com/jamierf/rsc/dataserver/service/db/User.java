@@ -1,8 +1,6 @@
 package com.jamierf.rsc.dataserver.service.db;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
 import com.jamierf.rsc.dataserver.api.UserData;
 import org.hibernate.annotations.Index;
 
@@ -15,20 +13,14 @@ public class User extends UserData implements Serializable {
     protected static final String USERNAME_FIELD = "username";
     protected static final String PASSWORD_FIELD = "password";
 
-    private static final HashFunction HASH_FUNCTION = Hashing.sha512();
-
-    public static byte[] hashPassword(String password) {
-        return HASH_FUNCTION.hashString(password).asBytes();
-    }
-
-    private byte[] password;
+    private Password password;
 
     protected User() { }
 
     protected User(String username, String password) {
         super.setUsername(username);
 
-        this.password = User.hashPassword(password);
+        this.password = new Password(password);
     }
 
     @Id
@@ -46,12 +38,16 @@ public class User extends UserData implements Serializable {
 
     @Column ( nullable = false, name = PASSWORD_FIELD )
     @JsonIgnore
-    protected byte[] getPassword() {
+    protected Password getPassword() {
         return password;
     }
 
-    protected void setPassword(byte[] password) {
+    protected void setPassword(Password password) {
         this.password = password;
+    }
+
+    protected boolean isPasswordMatch(String input) {
+        return password.isMatch(input);
     }
 
     @Basic
