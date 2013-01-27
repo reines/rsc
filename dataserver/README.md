@@ -4,6 +4,6 @@ The dataserver is a [Dropwizard](http://dropwizard.codahale.com) service, which 
 
 ## API
 
-  PUT /users
-  GET /users/{username}
-  PUT /sessions
+    PUT /users
+    GET /users/{username}
+    PUT /sessions
