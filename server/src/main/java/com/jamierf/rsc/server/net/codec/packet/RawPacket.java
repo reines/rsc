@@ -1,19 +1,38 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
 import com.google.common.base.Objects;
+import com.jamierf.rsc.server.net.codec.field.FieldCodec;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-public class RawPacket extends Packet {
+public abstract class RawPacket extends Packet {
 
-    protected ChannelBuffer buffer;
+    private ChannelBuffer buffer;
 
     public RawPacket() {
-        buffer = ChannelBuffers.EMPTY_BUFFER;
+        buffer = ChannelBuffers.dynamicBuffer();
     }
 
-    protected RawPacket(int size) {
-        buffer = ChannelBuffers.buffer(size);
+    protected void write(Object value) throws PacketCodecException {
+        FieldCodec.encode(value, buffer);
+    }
+
+    protected <T> T read(Class<T> type) throws PacketCodecException {
+        return FieldCodec.decode(type, buffer);
+    }
+
+    protected abstract void decode() throws Exception;
+
+    @Override
+    protected void decode(ChannelBuffer buffer) throws Exception {
+        this.buffer = buffer;
+
+        this.decode();
+    }
+
+    @Override
+    protected ChannelBuffer encode() throws Exception {
+        return buffer;
     }
 
     @Override

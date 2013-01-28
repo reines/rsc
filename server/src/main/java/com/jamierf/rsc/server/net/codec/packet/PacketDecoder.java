@@ -1,6 +1,5 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
-import com.jamierf.rsc.server.net.codec.field.FieldCodec;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Histogram;
 import com.yammer.metrics.core.Meter;
@@ -10,8 +9,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -23,24 +20,9 @@ public class PacketDecoder extends FrameDecoder {
     private static final Meter UNRECOGNISED_PACKET_METER = Metrics.newMeter(PacketDecoder.class, "unrecognised-packets", "errors", TimeUnit.SECONDS);
     private static final Histogram PACKET_SIZE_HISTOGRAM = Metrics.newHistogram(PacketDecoder.class, "packet-size");
 
-    public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer payload) throws Exception {
+    public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer buffer) throws Exception {
         final T packet = type.newInstance();
-
-        // If we have a raw packet then don't bother decoding
-        if (RawPacket.class.isAssignableFrom(type)) {
-            PacketDecoder.setField(RawPacket.class.getDeclaredField("buffer"), packet, payload);
-        }
-        else {
-            // For every field attempt to decode it
-            for (Field field : type.getDeclaredFields()) {
-                final int modifiers = field.getModifiers();
-                // Skip static fields
-                if (Modifier.isStatic(modifiers))
-                    continue;
-
-                PacketDecoder.setField(field, packet, payload);
-            }
-        }
+        packet.decode(buffer);
 
         return packet;
     }
@@ -51,19 +33,6 @@ public class PacketDecoder extends FrameDecoder {
 
         final int length = buffer.readUnsignedByte();
         return length < 160 ? length : (length - 160) * 256 + buffer.readUnsignedByte();
-    }
-
-    private static void setField(Field field, Packet packet, ChannelBuffer buffer) throws Exception {
-        final Class<?> type = field.getType();
-        final FieldCodec codec = FieldCodec.getInstance(type);
-        if (codec == null)
-            throw new PacketCodecException("Unsupported field type: " + type);
-
-        final boolean accessible = field.isAccessible();
-
-        field.setAccessible(true);
-        field.set(packet, codec.decode(buffer));
-        field.setAccessible(accessible);
     }
 
     private final Map<Integer, Class<? extends Packet>> packetTypes;
@@ -125,6 +94,7 @@ public class PacketDecoder extends FrameDecoder {
             throw new PacketCodecException("Unrecognised packet: id = " + id);
         }
 
+        // Decode the packet
         final Packet packet = PacketDecoder.decodePacket(type, payload);
 
         final int remaining = payload.readableBytes();

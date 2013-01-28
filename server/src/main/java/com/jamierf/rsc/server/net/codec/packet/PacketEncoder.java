@@ -22,37 +22,6 @@ public class PacketEncoder extends OneToOneEncoder {
     private static final Meter UNRECOGNISED_PACKET_METER = Metrics.newMeter(PacketEncoder.class, "unrecognised-packets", "errors", TimeUnit.SECONDS);
     private static final Histogram PACKET_SIZE_HISTOGRAM = Metrics.newHistogram(PacketEncoder.class, "packet-size");
 
-    public static ChannelBuffer encodePacket(Class<? extends Packet> type, Packet packet) throws Exception {
-        ChannelBuffer payload = ChannelBuffers.dynamicBuffer();
-
-        // For every field attempt to encode it
-        for (Field field : type.getDeclaredFields()) {
-            final int modifiers = field.getModifiers();
-            // Skip static fields
-            if (Modifier.isStatic(modifiers))
-                continue;
-
-            PacketEncoder.getField(field, packet, payload);
-        }
-
-        return payload;
-    }
-
-    private static void getField(Field field, Packet packet, ChannelBuffer buffer) throws Exception {
-        final Class<?> type = field.getType();
-        final FieldCodec codec = FieldCodec.getInstance(type);
-        if (codec == null)
-            throw new PacketCodecException("Unsupported field type: " + type);
-
-        final boolean accessible = field.isAccessible();
-
-        field.setAccessible(true);
-        final Object value = field.get(packet);
-        field.setAccessible(accessible);
-
-        codec.encode(value, buffer);
-    }
-
     private static void writeLength(int length, ChannelBuffer buffer) {
         if (length >= 160) {
             buffer.writeByte(160 + (length / 256));
@@ -84,10 +53,6 @@ public class PacketEncoder extends OneToOneEncoder {
 
         final Packet packet = (Packet) msg;
 
-        // If it's a raw packet then there is no encoding to do
-        if (packet instanceof RawPacket)
-            return ((RawPacket) packet).buffer;
-
         final Class<? extends Packet> type = packet.getClass();
         if (!packetTypes.containsKey(type)) {
             UNRECOGNISED_PACKET_METER.mark();
@@ -99,7 +64,8 @@ public class PacketEncoder extends OneToOneEncoder {
         if (packetRotator != null)
             id = packetRotator.rotateOutgoing(id);
 
-        final ChannelBuffer payload = PacketEncoder.encodePacket(type, packet);
+        // Encode the paylad
+        final ChannelBuffer payload = packet.encode();
 
         final int payloadLength = payload.readableBytes(); // length of the payload
         final int packetLength = payloadLength + 1; // + 1 for the ID
