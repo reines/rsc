@@ -4,12 +4,12 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 public class IntegerFieldCodec extends FieldCodec<Integer> {
     @Override
-    public Integer decode(ChannelBuffer buffer) {
-        return buffer.readInt();
+    public Integer doDecode(ChannelBuffer buffer) {
+        return buffer.readInt(); // TODO: Unsigned
     }
 
     @Override
-    public void encode(Integer value, ChannelBuffer buffer) {
-        buffer.writeInt(value);
+    public void doEncode(Integer value, ChannelBuffer buffer) {
+        buffer.writeInt(value); // TODO: Unsigned
     }
 }

@@ -4,7 +4,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 public class ByteArrayFieldCodec extends FieldCodec<byte[]> {
     @Override
-    public byte[] decode(ChannelBuffer buffer) {
+    public byte[] doDecode(ChannelBuffer buffer) throws FieldCodecException {
         final int length = buffer.readByte();
 
         final byte[] bytes = new byte[length];
@@ -14,7 +14,7 @@ public class ByteArrayFieldCodec extends FieldCodec<byte[]> {
     }
 
     @Override
-    public void encode(byte[] value, ChannelBuffer buffer) {
+    public void doEncode(byte[] value, ChannelBuffer buffer) throws FieldCodecException {
         buffer.writeByte(value.length);
         buffer.writeBytes(value);
     }

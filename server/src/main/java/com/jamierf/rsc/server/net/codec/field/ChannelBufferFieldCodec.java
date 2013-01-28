@@ -4,12 +4,12 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 public class ChannelBufferFieldCodec extends FieldCodec<ChannelBuffer> {
     @Override
-    public ChannelBuffer decode(ChannelBuffer buffer) {
+    public ChannelBuffer doDecode(ChannelBuffer buffer) {
         return buffer;
     }
 
     @Override
-    public void encode(ChannelBuffer value, ChannelBuffer buffer) {
+    public void doEncode(ChannelBuffer value, ChannelBuffer buffer) {
         buffer.writeBytes(value);
     }
 }

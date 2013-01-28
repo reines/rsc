@@ -7,6 +7,8 @@ import com.jamierf.rsc.server.net.handlers.LoginHandler;
 import com.jamierf.rsc.server.net.handlers.LogoutHandler;
 import com.jamierf.rsc.server.net.handlers.SessionHandler;
 import com.jamierf.rsc.server.net.handlers.PingHandler;
+import com.jamierf.rsc.server.net.packet.SetPositionPacket;
+import com.jamierf.rsc.server.net.packet.ShowBankScreenPacket;
 import com.jamierf.rsc.server.net.packet.SystemMessagePacket;
 import com.jamierf.rsc.server.net.session.SessionManager;
 import com.yammer.dropwizard.Service;
@@ -54,6 +56,8 @@ public class Server extends Service<ServerConfiguration> {
         acceptor.addPacketHandler(29, new LogoutHandler());
 
         // TODO: Register outgoing message types, these should also be in some config
-        acceptor.addPacketType(131, SystemMessagePacket.class);
+//        acceptor.addPacketType(131, SystemMessagePacket.class); // TODO: I don't think these IDs are correct
+//        acceptor.addPacketType(93, ShowBankScreenPacket.class);
+//        acceptor.addPacketType(0, SetPositionPacket.class);
     }
 }

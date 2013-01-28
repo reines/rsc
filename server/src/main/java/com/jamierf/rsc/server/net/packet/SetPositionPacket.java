@@ -3,7 +3,7 @@ package com.jamierf.rsc.server.net.packet;
 import com.google.common.base.Objects;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
 
-public class SetPositionCommandPacket extends Packet {
+public class SetPositionPacket extends Packet {
 
     private final short playerIndex;
     private final short xPosition;
@@ -11,7 +11,7 @@ public class SetPositionCommandPacket extends Packet {
     private final short zPosition;
     private final short unknown = 944;
 
-    public SetPositionCommandPacket(int playerIndex, int xPosition, int yPosition, int zPosition) {
+    public SetPositionPacket(int playerIndex, int xPosition, int yPosition, int zPosition) {
         this.playerIndex = (short) playerIndex;
         this.xPosition = (short) xPosition;
         this.yPosition = (short) yPosition;

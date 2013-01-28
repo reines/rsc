@@ -4,12 +4,12 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 public class LongFieldCodec extends FieldCodec<Long> {
     @Override
-    public Long decode(ChannelBuffer buffer) {
-        return buffer.readLong();
+    public Long doDecode(ChannelBuffer buffer) {
+        return buffer.readLong(); // TODO: Unsigned
     }
 
     @Override
-    public void encode(Long value, ChannelBuffer buffer) {
-        buffer.writeLong(value);
+    public void doEncode(Long value, ChannelBuffer buffer) {
+        buffer.writeLong(value); // TODO: Unsigned
     }
 }
