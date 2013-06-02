@@ -5,11 +5,11 @@ import org.jboss.netty.buffer.ChannelBuffer;
 public class ShortFieldCodec extends FieldCodec<Short> {
     @Override
     public Short doDecode(ChannelBuffer buffer) {
-        return buffer.readShort(); // TODO: Unsigned
+        return buffer.readShort();
     }
 
     @Override
     public void doEncode(Short value, ChannelBuffer buffer) {
-        buffer.writeShort(value); // TODO: Unsigned
+        buffer.writeShort(value);
     }
 }
