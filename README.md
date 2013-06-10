@@ -1,4 +1,4 @@
-A Runescape™ private server base, with client loader. This project contains no proprietary files - the loader downloads the game client at runtime, andswaps the in-memory encryption keys for our own, and redirects connection to our own server.
+A Runescape Classic™ private server base, with client loader. This project contains no proprietary files - the loader downloads the game client at runtime, andswaps the in-memory encryption keys for our own, and redirects connection to our own server.
 
 The server is split in to 2 parts:
 
