@@ -31,6 +31,9 @@ public class User extends UserData implements Serializable {
     }
 
     public static String cleanUsername(String username) {
+        if (username == null)
+            return null;
+
         // Replace multiple whitespace with a single
         username = username.replaceAll("\\s", " ");
 
@@ -87,20 +90,8 @@ public class User extends UserData implements Serializable {
 
     @Basic
     @Override
-    public boolean isSuspended() {
-        return super.isSuspended();
-    }
-
-    @Basic
-    @Override
     public boolean isMember() {
         return super.isMember();
-    }
-
-    @Basic
-    @Override
-    public boolean isSuspectedStolen() {
-        return super.isSuspectedStolen();
     }
 
     @Basic

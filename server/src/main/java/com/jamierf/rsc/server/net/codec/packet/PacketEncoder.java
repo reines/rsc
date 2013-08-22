@@ -1,6 +1,5 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
-import com.jamierf.rsc.server.net.codec.field.FieldCodec;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Histogram;
 import com.yammer.metrics.core.Meter;
@@ -10,8 +9,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -65,7 +62,8 @@ public class PacketEncoder extends OneToOneEncoder {
             id = packetRotator.rotateOutgoing(id);
 
         // Encode the paylad
-        final ChannelBuffer payload = packet.encode();
+        final ChannelBuffer payload = ChannelBuffers.dynamicBuffer();
+        packet.encode(PacketBuffer.wrap(payload));
 
         final int payloadLength = payload.readableBytes(); // length of the payload
         final int packetLength = payloadLength + 1; // + 1 for the ID

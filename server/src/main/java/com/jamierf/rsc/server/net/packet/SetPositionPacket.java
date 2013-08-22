@@ -2,20 +2,43 @@ package com.jamierf.rsc.server.net.packet;
 
 import com.google.common.base.Objects;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
+import com.jamierf.rsc.server.net.codec.packet.PacketBuffer;
+
+import java.io.IOException;
 
 public class SetPositionPacket extends Packet {
 
-    private final short playerIndex;
-    private final short xPosition;
-    private final short yPosition;
-    private final short zPosition;
-    private final short unknown = 944;
+    private short playerIndex;
+    private short xPosition;
+    private short yPosition;
+    private short zPosition;
+    private short unknown = 944;
+
+    protected SetPositionPacket() {}
 
     public SetPositionPacket(int playerIndex, int xPosition, int yPosition, int zPosition) {
         this.playerIndex = (short) playerIndex;
         this.xPosition = (short) xPosition;
         this.yPosition = (short) yPosition;
         this.zPosition = (short) zPosition;
+    }
+
+    @Override
+    protected void decode(PacketBuffer buffer) throws IOException {
+        playerIndex = buffer.read(short.class);
+        xPosition = buffer.read(short.class);
+        yPosition = buffer.read(short.class);
+        zPosition = buffer.read(short.class);
+        unknown = buffer.read(short.class);
+    }
+
+    @Override
+    protected void encode(PacketBuffer buffer) throws IOException {
+        buffer.write(playerIndex);
+        buffer.write(xPosition);
+        buffer.write(yPosition);
+        buffer.write(zPosition);
+        buffer.write(unknown);
     }
 
     @Override

@@ -16,13 +16,7 @@ public class UserData {
     protected  boolean banned = false;
 
     @JsonProperty
-    protected boolean suspended = false;
-
-    @JsonProperty
     protected boolean member = false;
-
-    @JsonProperty
-    protected boolean suspectedStolen = false;
 
     @JsonProperty
     protected boolean veteran = false;
@@ -37,17 +31,13 @@ public class UserData {
             @JsonProperty("userId") long userId,
             @JsonProperty("username") String username,
             @JsonProperty("banned") boolean banned,
-            @JsonProperty("suspended") boolean suspended,
             @JsonProperty("member") boolean member,
-            @JsonProperty("suspectedStolen") boolean suspectedStolen,
             @JsonProperty("veteran") boolean veteran,
             @JsonProperty("moderator") boolean moderator) {
         this.userId = userId;
         this.username = username;
         this.banned = banned;
-        this.suspended = suspended;
         this.member = member;
-        this.suspectedStolen = suspectedStolen;
         this.veteran = veteran;
         this.moderator = moderator;
     }
@@ -76,28 +66,12 @@ public class UserData {
         this.banned = banned;
     }
 
-    public boolean isSuspended() {
-        return suspended;
-    }
-
-    protected void setSuspended(boolean suspended) {
-        this.suspended = suspended;
-    }
-
     public boolean isMember() {
         return member;
     }
 
     protected void setMember(boolean member) {
         this.member = member;
-    }
-
-    public boolean isSuspectedStolen() {
-        return suspectedStolen;
-    }
-
-    protected void setSuspectedStolen(boolean suspectedStolen) {
-        this.suspectedStolen = suspectedStolen;
     }
 
     public boolean isVeteran() {
@@ -122,9 +96,7 @@ public class UserData {
                 .add("userId", userId)
                 .add("username", username)
                 .add("banned", banned)
-                .add("suspended", suspended)
                 .add("member", member)
-                .add("suspectedStolen", suspectedStolen)
                 .add("veteran", veteran)
                 .add("moderator", moderator)
                 .toString();

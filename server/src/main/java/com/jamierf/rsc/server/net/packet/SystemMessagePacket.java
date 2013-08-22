@@ -1,23 +1,29 @@
 package com.jamierf.rsc.server.net.packet;
 
 import com.google.common.base.Objects;
-import com.jamierf.rsc.dataserver.api.UserCredentials;
-import com.jamierf.rsc.server.net.codec.packet.PacketCodecException;
-import com.jamierf.rsc.server.net.codec.packet.RawPacket;
+import com.jamierf.rsc.server.net.codec.packet.Packet;
+import com.jamierf.rsc.server.net.codec.packet.PacketBuffer;
 
-public class SystemMessagePacket extends RawPacket {
+import java.io.IOException;
 
-    private final String message;
+public class SystemMessagePacket extends Packet {
 
-    public SystemMessagePacket(String message) throws PacketCodecException {
+    private String message;
+
+    protected SystemMessagePacket() {}
+
+    public SystemMessagePacket(String message) {
         this.message = message;
-
-        super.write(message.getBytes(UserCredentials.CHARSET)); // TODO: Common place for CHARSET
     }
 
     @Override
-    protected void decode() throws Exception {
-        // NOOP
+    protected void decode(PacketBuffer buffer) throws IOException {
+        message = buffer.read(String.class);
+    }
+
+    @Override
+    protected void encode(PacketBuffer buffer) throws IOException {
+        buffer.write(message);
     }
 
     @Override

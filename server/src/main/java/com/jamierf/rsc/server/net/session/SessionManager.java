@@ -7,6 +7,7 @@ import com.jamierf.rsc.dataserver.client.DataserverClient;
 import com.jamierf.rsc.server.net.codec.packet.PacketRotator;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.yammer.dropwizard.lifecycle.Managed;
+import org.eclipse.jetty.http.HttpStatus;
 import org.jboss.netty.channel.Channel;
 
 import java.util.Map;
@@ -39,8 +40,6 @@ public class SessionManager implements Managed {
     public Session createSession(Channel channel, String username, String password, int[] keys, int clientVersion, boolean reconnecting) throws SessionCreationException {
         try {
             final SessionData data = client.createSession(username, password, clientVersion, keys);
-            if (!data.getStatus().isSuccess())
-                throw new SessionCreationException(data.getStatus());
 
             // Create (or retrieve existing) session
             final Session session = this.getOrCreateSession(data, keys);
@@ -50,13 +49,12 @@ public class SessionManager implements Managed {
             return session;
         }
         catch (UniformInterfaceException e) {
-            throw new SessionCreationException(LoginStatus.LOGIN_SERVER_ERROR, e);
-        }
-        catch (Exception e) {
-            if (e instanceof SessionCreationException)
-                throw ((SessionCreationException) e);
-
-            throw new SessionCreationException(LoginStatus.CORRUPT_PROFILE, e);
+            switch (e.getResponse().getStatus()) {
+                case HttpStatus.BAD_REQUEST_400: throw new SessionCreationException(LoginStatus.LOGIN_SERVER_MISMATCH);
+                case HttpStatus.FORBIDDEN_403: throw new SessionCreationException(LoginStatus.INVALID_CREDENTIALS);
+                case HttpStatus.CONFLICT_409: throw new SessionCreationException(LoginStatus.ACCOUNT_BANNED);
+                default: throw new SessionCreationException(LoginStatus.LOGIN_SERVER_ERROR, e);
+            }
         }
     }
 

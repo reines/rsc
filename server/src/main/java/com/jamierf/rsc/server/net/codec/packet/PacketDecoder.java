@@ -22,7 +22,7 @@ public class PacketDecoder extends FrameDecoder {
 
     public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer buffer) throws Exception {
         final T packet = type.newInstance();
-        packet.decode(buffer);
+        packet.decode(PacketBuffer.wrap(buffer));
 
         return packet;
     }
@@ -64,7 +64,7 @@ public class PacketDecoder extends FrameDecoder {
             return null;
         }
 
-        int id = 0;
+        int id;
         final ChannelBuffer payload;
 
         if (length >= 160) {
