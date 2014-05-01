@@ -7,19 +7,22 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
+import java.nio.charset.StandardCharsets;
+
 public class SessionData extends UserData {
 
-    private static final HashFunction sessionHashFunction = Hashing.goodFastHash(Long.SIZE);
+    private static final HashFunction SESSION_HASH_FUNCTION = Hashing.goodFastHash(Long.SIZE);
 
     private static long generateSessionId(long userId, int[] keys, int clientVersion, String secret) {
-        final Hasher hasher = sessionHashFunction.newHasher();
+        final Hasher hasher = SESSION_HASH_FUNCTION.newHasher();
 
         hasher.putLong(userId);
-        hasher.putString(secret);
+        hasher.putString(secret, StandardCharsets.UTF_8);
         hasher.putInt(clientVersion);
 
-        for (int key : keys)
+        for (int key : keys) {
             hasher.putInt(key);
+        }
 
         return hasher.hash().asLong();
     }
@@ -40,7 +43,7 @@ public class SessionData extends UserData {
             @JsonProperty("banned") boolean banned,
             @JsonProperty("member") boolean member,
             @JsonProperty("veteran") boolean veteran,
-            @JsonProperty("mdoerator") boolean moderator) {
+            @JsonProperty("moderator") boolean moderator) {
         super(userId, username, banned, member, veteran, moderator);
 
         this.sessionId = sessionId;

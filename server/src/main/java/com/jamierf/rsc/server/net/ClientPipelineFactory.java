@@ -1,5 +1,6 @@
 package com.jamierf.rsc.server.net;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
@@ -11,10 +12,12 @@ import org.jboss.netty.channel.Channels;
 
 public class ClientPipelineFactory implements ChannelPipelineFactory {
 
+    private final MetricRegistry metricRegistry;
     private final LogicHandler logicHandler;
     private final BiMap<Integer, Class<? extends Packet>> packetTypes;
 
-    public ClientPipelineFactory(LogicHandler logicHandler) {
+    public ClientPipelineFactory(MetricRegistry metricRegistry, LogicHandler logicHandler) {
+        this.metricRegistry = metricRegistry;
         this.logicHandler = logicHandler;
 
         packetTypes = HashBiMap.create();
@@ -28,9 +31,9 @@ public class ClientPipelineFactory implements ChannelPipelineFactory {
     public ChannelPipeline getPipeline() throws Exception {
         final ChannelPipeline pipeline = Channels.pipeline();
 
-        pipeline.addLast(PacketDecoder.NAME, new PacketDecoder(packetTypes));
+        pipeline.addLast(PacketDecoder.NAME, new PacketDecoder(metricRegistry, packetTypes));
         pipeline.addLast(LogicHandler.NAME, logicHandler);
-        pipeline.addLast(PacketEncoder.NAME, new PacketEncoder(packetTypes.inverse()));
+        pipeline.addLast(PacketEncoder.NAME, new PacketEncoder(metricRegistry, packetTypes.inverse()));
 
         return pipeline;
     }

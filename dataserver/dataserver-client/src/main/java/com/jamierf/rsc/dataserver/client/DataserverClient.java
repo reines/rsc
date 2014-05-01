@@ -30,7 +30,7 @@ public class DataserverClient {
 
     public UserData createUser(String username, String password) {
         return resource.path(USER_PATH).path(username)
-                .queryParam("password", password)
+                .queryParam("password", password) // TODO: lets not have plain text passwords as query params?
                 .type(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .put(UserData.class);

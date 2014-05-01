@@ -6,25 +6,27 @@ import com.google.common.base.Objects;
 
 public class UserData {
 
-    @JsonProperty
-    protected long userId;
+    public static UserData create(long userId, String username) {
+        return new UserData(userId, username, false, false, false, false);
+    }
 
     @JsonProperty
-    protected String username;
+    protected final long userId;
 
     @JsonProperty
-    protected  boolean banned = false;
+    protected final String username;
 
     @JsonProperty
-    protected boolean member = false;
+    protected final boolean banned;
 
     @JsonProperty
-    protected boolean veteran = false;
+    protected final boolean member;
 
     @JsonProperty
-    protected boolean moderator = false;
+    protected final boolean veteran;
 
-    protected UserData() {}
+    @JsonProperty
+    protected final boolean moderator;
 
     @JsonCreator
     public UserData(
@@ -46,48 +48,24 @@ public class UserData {
         return userId;
     }
 
-    protected void setUserId(long userId) {
-        this.userId = userId;
-    }
-
     public String getUsername() {
         return username;
-    }
-
-    protected void setUsername(String username) {
-        this.username = username;
     }
 
     public boolean isBanned() {
         return banned;
     }
 
-    protected void setBanned(boolean banned) {
-        this.banned = banned;
-    }
-
     public boolean isMember() {
         return member;
-    }
-
-    protected void setMember(boolean member) {
-        this.member = member;
     }
 
     public boolean isVeteran() {
         return veteran;
     }
 
-    protected void setVeteran(boolean veteran) {
-        this.veteran = veteran;
-    }
-
     public boolean isModerator() {
         return moderator;
-    }
-
-    protected void setModerator(boolean moderator) {
-        this.moderator = moderator;
     }
 
     @Override

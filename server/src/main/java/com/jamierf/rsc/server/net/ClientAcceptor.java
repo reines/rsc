@@ -1,7 +1,8 @@
 package com.jamierf.rsc.server.net;
 
+import com.codahale.metrics.MetricRegistry;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
-import com.yammer.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.Managed;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
@@ -19,12 +20,12 @@ public class ClientAcceptor implements Managed {
     private final LogicHandler logicHandler;
     private final ClientPipelineFactory pipelineFactory;
 
-    public ClientAcceptor(int port) {
+    public ClientAcceptor(MetricRegistry metricRegistry, int port) {
         address = new InetSocketAddress(port);
-        channel = new AtomicReference<Channel>();
+        channel = new AtomicReference<>();
 
-        logicHandler = new LogicHandler();
-        pipelineFactory = new ClientPipelineFactory(logicHandler);
+        logicHandler = new LogicHandler(metricRegistry);
+        pipelineFactory = new ClientPipelineFactory(metricRegistry, logicHandler);
 
         final ExecutorService bossExecutor = Executors.newCachedThreadPool();
         final ExecutorService workerExecutor = Executors.newCachedThreadPool();

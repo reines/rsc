@@ -2,11 +2,12 @@ package com.jamierf.rsc.client.loader;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import javassist.ClassPath;
 import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
@@ -20,12 +21,14 @@ public class CachingRemoteJarClassLoader extends URLClassLoader implements Class
     private static final String CLASS_FILE_EXTENSION = ".class";
     private static final String CACHE_DIR_NAME = "game-client";
 
+    private static final Logger LOG = LoggerFactory.getLogger(CachingRemoteJarClassLoader.class);
     private static final File CACHE_DIR = CachingRemoteJarClassLoader.getTempDirectory();
 
     private static File getTempDirectory() {
         final File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        if (!tempDir.isDirectory())
+        if (!tempDir.isDirectory()) {
             return Files.createTempDir();
+        }
 
         try {
             final File dir = new File(tempDir, CACHE_DIR_NAME);
@@ -39,10 +42,14 @@ public class CachingRemoteJarClassLoader extends URLClassLoader implements Class
     }
 
     private static URL[] ensureCachedClasses(URL jarURL) throws IOException {
+        LOG.info("Using cache directory: {}", CACHE_DIR);
+
         final File localJar = new File(CACHE_DIR, "rsclassic.jar");
         if (!localJar.exists()) {
-            System.err.println("Downloading copy of jar, none locally");
-            ByteStreams.copy(jarURL.openStream(), Files.newOutputStreamSupplier(localJar));
+            try (final InputStream in = jarURL.openStream()) {
+                LOG.debug("Downloading copy of jar to {}, not found locally", localJar);
+                Files.asByteSink(localJar).writeFrom(in);
+            }
         }
 
         // Extract all classes from the jar
@@ -50,11 +57,13 @@ public class CachingRemoteJarClassLoader extends URLClassLoader implements Class
             for (ZipEntry entry; (entry = in.getNextEntry()) != null;) {
                 // Skip non class files
                 final String name = entry.getName();
-                if (!name.endsWith(CLASS_FILE_EXTENSION))
+                if (!name.endsWith(CLASS_FILE_EXTENSION)) {
                     continue;
+                }
 
-                try (final FileOutputStream out = new FileOutputStream(new File(CACHE_DIR, entry.getName()))) {
-                    ByteStreams.copy(in, out);
+                final File classFile = new File(CACHE_DIR, entry.getName());
+                if (!classFile.exists()) {
+                    Files.asByteSink(classFile).writeFrom(in);
                 }
             }
         }
@@ -63,24 +72,18 @@ public class CachingRemoteJarClassLoader extends URLClassLoader implements Class
     }
 
 
-    public CachingRemoteJarClassLoader(URL jarURL) throws IOException {
-        super(CachingRemoteJarClassLoader.ensureCachedClasses(jarURL));
-    }
-
     public CachingRemoteJarClassLoader(URL jarURL, ClassLoader parent) throws IOException {
         super(CachingRemoteJarClassLoader.ensureCachedClasses(jarURL), parent);
     }
 
     @Override
-    public InputStream openClassfile(String classname) throws NotFoundException {
-        classname = classname.concat(CLASS_FILE_EXTENSION);
-        return this.getResourceAsStream(classname);
+    public InputStream openClassfile(String type) throws NotFoundException {
+        return this.getResourceAsStream(type.concat(CLASS_FILE_EXTENSION));
     }
 
     @Override
-    public URL find(String classname) {
-        classname = classname.concat(CLASS_FILE_EXTENSION);
-        return this.findResource(classname);
+    public URL find(String type) {
+        return this.findResource(type.concat(CLASS_FILE_EXTENSION));
     }
 
     @Override
@@ -89,7 +92,7 @@ public class CachingRemoteJarClassLoader extends URLClassLoader implements Class
             super.close();
         }
         catch (IOException e) {
-            e.printStackTrace();
+            LOG.warn("Error closing class loader", e);
         }
     }
 

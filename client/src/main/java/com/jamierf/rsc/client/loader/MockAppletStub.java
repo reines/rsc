@@ -1,12 +1,16 @@
 package com.jamierf.rsc.client.loader;
 
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.applet.AppletContext;
 import java.applet.AppletStub;
 import java.net.URL;
 
 public class MockAppletStub implements AppletStub, GameClientCallback {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MockAppletStub.class);
 
     private final URL resourceURL;
     private final URL serverURL;
@@ -35,7 +39,7 @@ public class MockAppletStub implements AppletStub, GameClientCallback {
     @Override
     public URL getCodeBase() {
         final URL codeBase = connecting ? serverURL : resourceURL;
-        System.out.println("Providing codeBase = " + codeBase);
+        LOG.trace("Providing codeBase: {}", codeBase);
         return codeBase;
     }
 
@@ -51,7 +55,7 @@ public class MockAppletStub implements AppletStub, GameClientCallback {
 
     @Override
     public void appletResize(int width, int height) {
-
+        // NOOP
     }
 
     @Override

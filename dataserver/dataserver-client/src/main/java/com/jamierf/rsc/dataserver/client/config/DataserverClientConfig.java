@@ -1,27 +1,16 @@
 package com.jamierf.rsc.dataserver.client.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yammer.dropwizard.client.JerseyClientConfiguration;
+import io.dropwizard.client.JerseyClientConfiguration;
 
+import javax.validation.constraints.NotNull;
 import java.net.URI;
 
-public class DataserverClientConfig {
+public class DataserverClientConfig extends JerseyClientConfiguration {
 
-    @JsonProperty
-    private JerseyClientConfiguration jersey = new JerseyClientConfiguration();
-
+    @NotNull
     @JsonProperty
     private URI root;
-
-    public DataserverClientConfig() { }
-
-    public DataserverClientConfig(URI root) {
-        this.root = root;
-    }
-
-    public JerseyClientConfiguration getJerseyClientConfiguration() {
-        return jersey;
-    }
 
     public URI getRoot() {
         return root;

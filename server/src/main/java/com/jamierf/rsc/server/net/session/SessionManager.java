@@ -6,7 +6,7 @@ import com.jamierf.rsc.dataserver.api.SessionData;
 import com.jamierf.rsc.dataserver.client.DataserverClient;
 import com.jamierf.rsc.server.net.codec.packet.PacketRotator;
 import com.sun.jersey.api.client.UniformInterfaceException;
-import com.yammer.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.Managed;
 import org.eclipse.jetty.http.HttpStatus;
 import org.jboss.netty.channel.Channel;
 

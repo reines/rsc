@@ -2,7 +2,7 @@ package com.jamierf.rsc.server.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jamierf.rsc.dataserver.client.config.DataserverClientConfig;
-import com.yammer.dropwizard.config.Configuration;
+import io.dropwizard.Configuration;
 import org.bouncycastle.openssl.PEMReader;
 
 import javax.validation.constraints.Max;
@@ -15,17 +15,17 @@ import java.security.KeyPair;
 
 public class ServerConfiguration extends Configuration {
 
-    @JsonProperty
     @Min(1024)
     @Max(65535)
+    @JsonProperty
     private int port = 43594;
 
-    @JsonProperty("privateKey")
     @NotNull
+    @JsonProperty("privateKey")
     private File privateKeyFile;
 
-    @JsonProperty
     @NotNull
+    @JsonProperty
     private DataserverClientConfig dataserver = new DataserverClientConfig();
 
     public int getPort() {

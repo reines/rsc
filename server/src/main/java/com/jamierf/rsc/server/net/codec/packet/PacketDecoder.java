@@ -1,8 +1,6 @@
 package com.jamierf.rsc.server.net.codec.packet;
 
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Histogram;
-import com.yammer.metrics.core.Meter;
+import com.codahale.metrics.MetricRegistry;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -10,15 +8,14 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class PacketDecoder extends FrameDecoder {
 
     public static final String NAME = "packet-decoder";
 
-    private static final Meter OVERSIZE_PACKET_METER = Metrics.newMeter(PacketDecoder.class, "oversized-packets", "errors", TimeUnit.SECONDS);
-    private static final Meter UNRECOGNISED_PACKET_METER = Metrics.newMeter(PacketDecoder.class, "unrecognised-packets", "errors", TimeUnit.SECONDS);
-    private static final Histogram PACKET_SIZE_HISTOGRAM = Metrics.newHistogram(PacketDecoder.class, "packet-size");
+    private static final String OVERSIZE_PACKET_METER_NAME = "oversized-packets";
+    private static final String UNRECOGNISED_PACKET_METER_NAME = "unrecognised-packets";
+    private static final String PACKET_SIZE_HISTOGRAM_NAME = "packet-size";
 
     public static <T extends Packet> T decodePacket(Class<T> type, ChannelBuffer buffer) throws Exception {
         final T packet = type.newInstance();
@@ -28,17 +25,20 @@ public class PacketDecoder extends FrameDecoder {
     }
 
     private static int readLength(ChannelBuffer buffer) {
-        if (buffer.readableBytes() < 2)
+        if (buffer.readableBytes() < 2) {
             return -1;
+        }
 
         final int length = buffer.readUnsignedByte();
         return length < 160 ? length : (length - 160) * 256 + buffer.readUnsignedByte();
     }
 
+    private final MetricRegistry metricRegistry;
     private final Map<Integer, Class<? extends Packet>> packetTypes;
     private PacketRotator packetRotator;
 
-    public PacketDecoder(Map<Integer, Class<? extends Packet>> packetTypes) {
+    public PacketDecoder(MetricRegistry metricRegistry, Map<Integer, Class<? extends Packet>> packetTypes) {
+        this.metricRegistry = metricRegistry;
         this.packetTypes = packetTypes;
 
         packetRotator = null;
@@ -51,8 +51,9 @@ public class PacketDecoder extends FrameDecoder {
     @Override
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
         // No point in trying if we don't have enough data
-        if (buffer.readableBytes() < 2)
+        if (buffer.readableBytes() < 2) {
             return null;
+        }
 
         // Mark the buffer position incase it doesn't include an entire packet
         buffer.markReaderIndex();
@@ -90,7 +91,7 @@ public class PacketDecoder extends FrameDecoder {
 
         final Class<? extends Packet> type = packetTypes.get(id);
         if (type == null) {
-            UNRECOGNISED_PACKET_METER.mark();
+            metricRegistry.meter(UNRECOGNISED_PACKET_METER_NAME).mark();
             throw new PacketCodecException("Unrecognised packet: id = " + id);
         }
 
@@ -99,11 +100,11 @@ public class PacketDecoder extends FrameDecoder {
 
         final int remaining = payload.readableBytes();
         if (remaining > 0) {
-            OVERSIZE_PACKET_METER.mark();
+            metricRegistry.meter(OVERSIZE_PACKET_METER_NAME).mark();
             throw new PacketCodecException("Buffer not empty (" + remaining + ") after decoding packet " + packet + ": " + payload);
         }
 
-        PACKET_SIZE_HISTOGRAM.update(length);
+        metricRegistry.histogram(PACKET_SIZE_HISTOGRAM_NAME).update(length);
         return packet;
     }
 }

@@ -14,7 +14,7 @@ public class ClientFrame extends JFrame {
 
         this.client = client;
 
-        super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        super.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         super.setResizable(false);
         super.add(client, BorderLayout.CENTER);
         super.pack();

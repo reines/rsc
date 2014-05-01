@@ -1,6 +1,6 @@
 package com.jamierf.rsc.server.net.handlers;
 
-import com.google.common.collect.Maps;
+import com.codahale.metrics.MetricRegistry;
 import com.jamierf.rsc.dataserver.api.LoginStatus;
 import com.jamierf.rsc.dataserver.api.SessionCredentials;
 import com.jamierf.rsc.server.net.PacketHandler;
@@ -8,55 +8,27 @@ import com.jamierf.rsc.server.net.packet.LoginRequestPacket;
 import com.jamierf.rsc.server.net.session.Session;
 import com.jamierf.rsc.server.net.session.SessionCreationException;
 import com.jamierf.rsc.server.net.session.SessionManager;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Meter;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 
 import java.security.interfaces.RSAPrivateKey;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class LoginHandler extends PacketHandler<LoginRequestPacket> {
 
-    private static final Meter CONNECTION_METER = Metrics.newMeter(LoginHandler.class, "connections", "requests", TimeUnit.SECONDS);
-    private static final Meter RECONNECTION_METER = Metrics.newMeter(LoginHandler.class, "reconnections", "requests", TimeUnit.SECONDS);
-    private static final Meter REJECTION_METER = Metrics.newMeter(LoginHandler.class, "rejections", "requests", TimeUnit.SECONDS);
-
-    private static final Map<LoginStatus, Meter> STATUS_METER = Maps.newEnumMap(LoginStatus.class);
-
-    private static Meter getStatusMeter(LoginStatus status) {
-        synchronized (STATUS_METER) {
-            if (!STATUS_METER.containsKey(status))
-                STATUS_METER.put(status, Metrics.newMeter(LoginStatus.class, status.toString(), "requests", TimeUnit.SECONDS));
-
-            return STATUS_METER.get(status);
-        }
-    }
-
-    private static void sendLoginResponse(ChannelHandlerContext ctx, LoginStatus status) throws InterruptedException {
-        final Channel channel = ctx.getChannel();
-
-        final ChannelBuffer payload = ChannelBuffers.buffer(Byte.SIZE);
-        payload.writeByte(status.getCode());
-
-        // Send the response (and wait for it to be sent)
-        channel.write(payload).sync();
-
-        // This was an unsuccessful login, so close their connection
-        if (!status.isSuccess())
-            channel.close().sync();
-
-        LoginHandler.getStatusMeter(status).mark();
-    }
+    private static final String CONNECTION_METER_NAME = "connections";
+    private static final String RECONNECTION_METER_NAME = "reconnections";
+    private static final String REJECTION_METER_NAME = "rejections";
+    private static final String STATUS_METER_TEMPLATE = "status-%s";
 
     private final SessionManager sessionManager;
+    private final MetricRegistry metricRegistry;
     private final RSAPrivateKey key;
 
-    public LoginHandler(SessionManager sessionManager, RSAPrivateKey key) {
+    public LoginHandler(SessionManager sessionManager, MetricRegistry metricRegistry, RSAPrivateKey key) {
         this.sessionManager = sessionManager;
+        this.metricRegistry = metricRegistry;
         this.key = key;
     }
 
@@ -90,19 +62,36 @@ public class LoginHandler extends PacketHandler<LoginRequestPacket> {
             ctx.setAttachment(session);
 
             // Send successful login response to the client
-            LoginHandler.sendLoginResponse(ctx, LoginStatus.SUCCESSFUL_LOGIN);
+            sendLoginResponse(ctx, LoginStatus.SUCCESSFUL_LOGIN);
 
             // Mark if this is a connection or a reconnection
-            (packet.isReconnecting() ? RECONNECTION_METER : CONNECTION_METER).mark();
+            metricRegistry.meter(packet.isReconnecting() ? RECONNECTION_METER_NAME : CONNECTION_METER_NAME).mark();
 
             // TODO: Send them the required shit
         }
         catch (SessionCreationException e) {
             // Error creating session, let the client know then kill their connection
-            LoginHandler.sendLoginResponse(ctx, e.getResponse());
+            sendLoginResponse(ctx, e.getResponse());
 
             // Mark this as a rejection
-            REJECTION_METER.mark();
+            metricRegistry.meter(REJECTION_METER_NAME).mark();
         }
+    }
+
+    private void sendLoginResponse(ChannelHandlerContext ctx, LoginStatus status) throws InterruptedException {
+        final Channel channel = ctx.getChannel();
+
+        final ChannelBuffer payload = ChannelBuffers.buffer(Byte.SIZE);
+        payload.writeByte(status.getCode());
+
+        // Send the response (and wait for it to be sent)
+        channel.write(payload).sync();
+
+        // This was an unsuccessful login, so close their connection
+        if (!status.isSuccess()) {
+            channel.close().sync();
+        }
+
+        metricRegistry.meter(String.format(STATUS_METER_TEMPLATE, status)).mark();
     }
 }

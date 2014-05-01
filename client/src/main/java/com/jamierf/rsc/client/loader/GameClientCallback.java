@@ -1,6 +1,9 @@
 package com.jamierf.rsc.client.loader;
 
 public interface GameClientCallback {
-    public void beforeConnect();
-    public void afterConnect();
+    @SuppressWarnings("unused")
+    void beforeConnect();
+
+    @SuppressWarnings("unused")
+    void afterConnect();
 }

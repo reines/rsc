@@ -3,8 +3,7 @@ privateKey: secret.pem
 
 dataserver:
   root: http://localhost:8010
-  jersey:
-    timeout: 5s
+  timeout: 5s
 
 http:
   port: 8000

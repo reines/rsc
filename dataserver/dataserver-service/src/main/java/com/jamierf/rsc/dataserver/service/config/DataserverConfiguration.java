@@ -1,20 +1,14 @@
 package com.jamierf.rsc.dataserver.service.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yammer.dropwizard.config.Configuration;
-import com.yammer.dropwizard.db.DatabaseConfiguration;
+import io.dropwizard.Configuration;
+import org.hibernate.validator.constraints.NotEmpty;
 
 public class DataserverConfiguration extends Configuration {
 
+    @NotEmpty
     @JsonProperty
-    private DatabaseConfiguration database = new DatabaseConfiguration();
-
-    @JsonProperty
-    private String sessionSecret = "";
-
-    public DatabaseConfiguration getDatabaseConfiguration() {
-        return database;
-    }
+    private String sessionSecret;
 
     public String getSessionSecret() {
         return sessionSecret;

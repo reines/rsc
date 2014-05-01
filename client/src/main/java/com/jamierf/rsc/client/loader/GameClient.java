@@ -3,8 +3,9 @@ package com.jamierf.rsc.client.loader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import javassist.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.applet.Applet;
@@ -22,6 +23,7 @@ import java.util.List;
 
 public class GameClient extends JPanel implements Runnable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(GameClient.class);
     private static final Dimension CLIENT_RESOLUTION = new Dimension(512, 345);
     private static final String JAR_NAME = "rsclassic.jar";
 
@@ -46,6 +48,8 @@ public class GameClient extends JPanel implements Runnable {
     }
 
     private static Applet loadClientApplet(URL resourceURL, URL serverURL, RSAPublicKey key, boolean members) throws GameClientModificationException, IOException {
+        LOG.info("Loading client applet, server: {}, resources: {}", serverURL, resourceURL);
+
         final Class<Applet> clazz = GameClient.loadClientAppletClass(resourceURL, key);
 
         final AppletStub stub = new MockAppletStub(resourceURL, serverURL, GameClient.buildParameterMap(members));
@@ -93,9 +97,10 @@ public class GameClient extends JPanel implements Runnable {
             final Class<Applet> clazz = client.toClass(loader, GameClient.class.getProtectionDomain());
 
             // Find all big integers from the game client
-            final ImmutableList<Field> bigIntegers = GameClient.findEncryptionKeys(loader, loader.listClassNames());
-            if (bigIntegers.size() != 2)
+            final List<Field> bigIntegers = GameClient.findEncryptionKeys(loader, loader.listClassNames());
+            if (bigIntegers.size() != 2) {
                 throw new GameClientModificationException("Unable to find encryption keys in client");
+            }
 
             // Update the game clients encryption keys to ours
             GameClient.setEncryptionKey(bigIntegers.get(0), key.getModulus());
@@ -129,7 +134,7 @@ public class GameClient extends JPanel implements Runnable {
         // Make the field accessible
         field.setAccessible(true);
 
-        System.out.println("Replacing encryption key " + field.get(null) + " with " + value);
+        LOG.info("Replacing encryption key {} with {}", field.get(null), value);
 
         field.set(null, value);
 
@@ -144,14 +149,15 @@ public class GameClient extends JPanel implements Runnable {
             try {
                 final Class<?> clazz = loader.loadClass(className);
                 for (Field field : clazz.getDeclaredFields()) {
-                    if (!BigInteger.class.equals(field.getType()))
+                    if (!BigInteger.class.equals(field.getType())) {
                         continue;
+                    }
 
                     fields.add(field);
                 }
             }
             catch (NoClassDefFoundError e) {
-                System.err.println("Unable to load class '" + className + "': Unable to load dependency " + e.getMessage());
+                LOG.warn("Unable to load class '" + className + "', unable to load dependency", e);
             }
         }
 
@@ -183,11 +189,13 @@ public class GameClient extends JPanel implements Runnable {
 
     private static CtMethod findMethod(CtMethod[] methods, CtClass returnType, CtClass[] parameterTypes) throws NotFoundException {
         for (CtMethod method : methods) {
-            if (!returnType.equals(method.getReturnType()))
+            if (!returnType.equals(method.getReturnType())) {
                 continue;
+            }
 
-            if (!Arrays.equals(parameterTypes, method.getParameterTypes()))
+            if (!Arrays.equals(parameterTypes, method.getParameterTypes())) {
                 continue;
+            }
 
             return method;
         }

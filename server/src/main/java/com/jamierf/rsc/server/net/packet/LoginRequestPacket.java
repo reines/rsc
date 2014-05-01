@@ -22,7 +22,7 @@ public class LoginRequestPacket extends Packet {
         private int sessionKey4;
         private String password;
 
-        protected SessionData() {}
+        public SessionData() {}
 
         public int[] getSessionKeys() {
             return new int[]{ sessionKey1, sessionKey2, sessionKey3, sessionKey4 };
@@ -58,7 +58,7 @@ public class LoginRequestPacket extends Packet {
         private boolean limit30;
         private String username;
 
-        protected LoginData() {}
+        public LoginData() {}
 
         public boolean isLimit30() {
             return limit30;
@@ -86,7 +86,7 @@ public class LoginRequestPacket extends Packet {
     private byte[] sessionData;
     private byte[] loginData;
 
-    protected LoginRequestPacket() {}
+    public LoginRequestPacket() {}
 
     public boolean isReconnecting() {
         return reconnecting;

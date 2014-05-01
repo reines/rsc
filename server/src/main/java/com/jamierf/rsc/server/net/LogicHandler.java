@@ -1,42 +1,44 @@
 package com.jamierf.rsc.server.net;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.Maps;
 import com.jamierf.rsc.server.net.codec.packet.Packet;
 import com.jamierf.rsc.server.net.codec.packet.PacketCodecException;
 import com.jamierf.rsc.server.net.session.Session;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Gauge;
-import com.yammer.metrics.core.Meter;
-import com.yammer.metrics.core.TimerContext;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class LogicHandler extends SimpleChannelUpstreamHandler {
 
     public static final String NAME = "logic-handler";
 
-    private static final Meter CONNECTION_METER = Metrics.newMeter(LogicHandler.class, "connections", "requests", TimeUnit.SECONDS);
-    private static final Meter DISCONNECTION_METER = Metrics.newMeter(LogicHandler.class, "disconnections", "requests", TimeUnit.SECONDS);
-    private static final Meter EXCEPTION_METER = Metrics.newMeter(LogicHandler.class, "exceptions", "errors", TimeUnit.SECONDS);
-    private static final Meter UNHANDLED_PACKET_METER = Metrics.newMeter(LogicHandler.class, "unhandled-packets", "errors", TimeUnit.SECONDS);
-    private static final Meter MALFORMED_PACKET_METER = Metrics.newMeter(LogicHandler.class, "malformed-packets", "errors", TimeUnit.SECONDS);
-    private static final Meter MISSING_SESSION_METER = Metrics.newMeter(LogicHandler.class, "missing-sessions", "errors", TimeUnit.SECONDS);
+    private static final String CONNECTION_METER_NAME = "connections";
+    private static final String DISCONNECTION_METER_NAME = "disconnections";
+    private static final String EXCEPTION_METER_NAME = "exceptions";
+    private static final String UNHANDLED_PACKET_METER_NAME = "unhandled-packets";
+    private static final String MALFORMED_PACKET_METER_NAME = "malformed-packets";
+    private static final String MISSING_SESSION_METER_NAME = "missing-sessions";
+    private static final String REQUEST_TIMER_TEMPLATE = "request-%s";
 
+    private final MetricRegistry metricRegistry;
     private final Map<Class<? extends Packet>, PacketHandler> handlers;
     private final ChannelGroup channels;
 
-    public LogicHandler() {
+    public LogicHandler(MetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
+
         handlers = Maps.newHashMap();
         channels = new DefaultChannelGroup(LogicHandler.NAME);
 
-        Metrics.newGauge(LogicHandler.class, "active-connections", new Gauge<Integer>() {
+        metricRegistry.register("active-connections", new Gauge<Integer>() {
             @Override
-            public Integer value() {
+            public Integer getValue() {
                 return channels.size();
             }
         });
@@ -57,7 +59,7 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        CONNECTION_METER.mark();
+        metricRegistry.meter(CONNECTION_METER_NAME).mark();
 
         System.err.println(e);
     }
@@ -67,14 +69,13 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
         final Packet packet = (Packet) e.getMessage();
         final Class<? extends Packet> type = packet.getClass();
 
-        final Packet.Metrics metrics = Packet.getMetrics(type);
-        final TimerContext timer = metrics.requestTimer.time();
+        final Timer.Context timer = metricRegistry.timer(String.format(REQUEST_TIMER_TEMPLATE, type.getSimpleName())).time();
 
         try {
             final PacketHandler handler = handlers.get(type);
             // We have no handler for this packet type
             if (handler == null) {
-                UNHANDLED_PACKET_METER.mark();
+                metricRegistry.meter(UNHANDLED_PACKET_METER_NAME).mark();
 
                 System.err.println("no handler"); // but we got this far which means it was a recognised packet type at least
                 return;
@@ -83,7 +84,7 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
             final Session session = (Session) ctx.getAttachment();
             // We have no session and the handler for this packet type requires one
             if (session == null && handler.isSessionRequired()) {
-                MISSING_SESSION_METER.mark();
+                metricRegistry.meter(MISSING_SESSION_METER_NAME).mark();
 
                 System.err.println("no client");
 
@@ -102,21 +103,21 @@ public class LogicHandler extends SimpleChannelUpstreamHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-        EXCEPTION_METER.mark();
+        metricRegistry.meter(EXCEPTION_METER_NAME).mark();
 
         final Throwable cause = e.getCause();
         cause.printStackTrace();
 
         // If a client is sending bad packets disconnect them
         if (cause instanceof PacketCodecException) {
-            MALFORMED_PACKET_METER.mark();
+            metricRegistry.meter(MALFORMED_PACKET_METER_NAME).mark();
             ctx.getChannel().close();
         }
     }
 
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        DISCONNECTION_METER.mark();
+        metricRegistry.meter(DISCONNECTION_METER_NAME).mark();
 
         System.err.println(e);
     }

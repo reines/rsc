@@ -1,11 +1,4 @@
-database:
-  driverClass: com.mysql.jdbc.Driver
-  user: dataserver
-  password: supersecret
-  url: jdbc:mysql://dataserver/dataserver
-
-  properties:
-    hibernate.hbm2ddl.auto: update
+sessionSecret: iofngo4iwgelrg345h45908gh3904ghuf-9032hgf09CE(
 
 http:
   port: 8010
