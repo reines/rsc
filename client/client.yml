@@ -1,0 +1,22 @@
+serverHost: http://localhost
+publicKey: key.pem
+
+proxy:
+  remoteHost: http://classic2.runescape.com
+  cacheDirectory: /tmp/rsclient
+  connectionTimeout: 2s
+  timeout: 2s
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 8090
+  adminConnectors:
+    - type: http
+      port: 8091
+
+logging:
+  level: INFO
+
+  loggers:
+    "com.jamierf": TRACE

@@ -1,4 +1,4 @@
-package com.jamierf.rsc.client.loader;
+package com.jamierf.rsc.client.error;
 
 public class GameClientModificationException extends ReflectiveOperationException {
 

@@ -33,6 +33,8 @@ public class Server extends Application<ServerConfiguration> {
 
     @Override
     public void run(ServerConfiguration configuration, Environment environment) throws Exception {
+        environment.jersey().disable();
+
         // Create dataserver client
         final JerseyClientBuilder jerseyClientBuilder = new JerseyClientBuilder(environment).using(configuration.getDataserverClientConfig());
         final DataserverClient dataserverClient = new DataserverClient(jerseyClientBuilder.build("dataserver"), configuration.getDataserverClientConfig());

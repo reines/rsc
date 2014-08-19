@@ -1,8 +1,12 @@
-package com.jamierf.rsc.client.loader;
+package com.jamierf.rsc.client.loader.client;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.jamierf.rsc.client.error.GameClientModificationException;
+import com.jamierf.rsc.client.loader.applet.MockAppletStub;
+import com.jamierf.rsc.client.loader.jar.JarClassLoader;
+import io.dropwizard.lifecycle.Managed;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,15 +25,11 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.List;
 
-public class GameClient extends JPanel implements Runnable {
+public class GameClient extends JPanel implements Managed {
 
     private static final Logger LOG = LoggerFactory.getLogger(GameClient.class);
     private static final Dimension CLIENT_RESOLUTION = new Dimension(512, 345);
     private static final String JAR_NAME = "rsclassic.jar";
-
-    private static URL buildServerURL(String serverHost) throws MalformedURLException {
-        return new URL("http", serverHost, "/");
-    }
 
     private static ImmutableMap<String, String> buildParameterMap(boolean members) {
         return ImmutableMap.<String, String>builder()
@@ -47,7 +47,7 @@ public class GameClient extends JPanel implements Runnable {
                 .build();
     }
 
-    private static Applet loadClientApplet(URL resourceURL, URL serverURL, RSAPublicKey key, boolean members) throws GameClientModificationException, IOException {
+    private static Applet loadClientApplet(URL resourceURL, URL serverURL, RSAPublicKey key, boolean members) throws GameClientModificationException {
         LOG.info("Loading client applet, server: {}, resources: {}", serverURL, resourceURL);
 
         final Class<Applet> clazz = GameClient.loadClientAppletClass(resourceURL, key);
@@ -68,7 +68,7 @@ public class GameClient extends JPanel implements Runnable {
     private static Class<Applet> loadClientAppletClass(URL resourceURL, RSAPublicKey key) throws GameClientModificationException {
         try {
             final URL jarURL = new URL(resourceURL, JAR_NAME);
-            final CachingRemoteJarClassLoader loader = new CachingRemoteJarClassLoader(jarURL, ClassLoader.getSystemClassLoader());
+            final JarClassLoader loader = new JarClassLoader(jarURL, ClassLoader.getSystemClassLoader());
 
             // Create a class pool with our classes and the game client in it
             final ClassPool pool = ClassPool.getDefault();
@@ -157,7 +157,12 @@ public class GameClient extends JPanel implements Runnable {
                 }
             }
             catch (NoClassDefFoundError e) {
-                LOG.warn("Unable to load class '" + className + "', unable to load dependency", e);
+                if (e.getMessage().contains("com/ms")) {
+                    LOG.trace("Unable to load class '{}', compiled using Microsoft Java", className);
+                }
+                else {
+                    LOG.warn("Unable to load class '" + className + "', unable to load dependency", e);
+                }
             }
         }
 
@@ -203,24 +208,39 @@ public class GameClient extends JPanel implements Runnable {
         return null;
     }
 
-    private final Applet client;
+    private final URL resourceURL;
+    private final URL serverURL;
+    private final RSAPublicKey key;
 
-    public GameClient(URL resourceURL, String serverHost, RSAPublicKey key, boolean members) throws Exception {
-        this (resourceURL, GameClient.buildServerURL(serverHost), key, members);
-    }
+    private Applet client;
 
-    public GameClient(URL resourceURL, URL serverURL, RSAPublicKey key, boolean members) throws Exception {
+    public GameClient(URL resourceURL, URL serverURL, RSAPublicKey key, String title) {
         super(new BorderLayout());
+        setName(title);
 
-        client = GameClient.loadClientApplet(resourceURL, serverURL, key, members);
-
-        super.setPreferredSize(CLIENT_RESOLUTION);
-        super.add(client);
+        this.resourceURL = resourceURL;
+        this.serverURL = serverURL;
+        this.key = key;
     }
 
     @Override
-    public void run() {
+    public void start() throws GameClientModificationException {
+        client = GameClient.loadClientApplet(resourceURL, serverURL, key, true);
+
+        setPreferredSize(CLIENT_RESOLUTION);
+        add(client);
+
         client.init();
         client.start();
+    }
+
+    @Override
+    public void stop() {
+        if (client != null) {
+            remove(client);
+
+            client.stop();
+            client.destroy();
+        }
     }
 }

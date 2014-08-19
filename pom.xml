@@ -16,13 +16,12 @@
     <properties>
         <java.version>1.7</java.version>
 
-        <dropwizard.version>0.7.0</dropwizard.version>
+        <dropwizard.version>0.7.1</dropwizard.version>
         <netty.version>3.6.2.Final</netty.version>
         <commons-math.version>3.1.1</commons-math.version>
         <commons-io.version>1.3.2</commons-io.version>
         <commons-lang.version>3.1</commons-lang.version>
         <bouncycastle.version>140</bouncycastle.version>
-        <guava.version>16.0.1</guava.version>
         <javassist.version>3.17.1-GA</javassist.version>
         <jbcrypt.version>0.3m</jbcrypt.version>
     </properties>

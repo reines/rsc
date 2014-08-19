@@ -5,9 +5,8 @@ dataserver:
   root: http://localhost:8010
   timeout: 5s
 
-http:
-  port: 8000
-  adminPort: 8001
-
 logging:
   level: INFO
+
+  loggers:
+    "com.jamierf": TRACE

@@ -1,8 +1,15 @@
 sessionSecret: iofngo4iwgelrg345h45908gh3904ghuf-9032hgf09CE(
 
-http:
-  port: 8010
-  adminPort: 8011
+server:
+  applicationConnectors:
+    - type: http
+      port: 8010
+  adminConnectors:
+    - type: http
+      port: 8011
 
 logging:
   level: INFO
+
+  loggers:
+    "com.jamierf": TRACE

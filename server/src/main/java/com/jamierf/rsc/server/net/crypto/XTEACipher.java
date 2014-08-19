@@ -3,7 +3,7 @@ package com.jamierf.rsc.server.net.crypto;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-public class XTEACipher {
+public final class XTEACipher {
 
     private static final int NUM_ROUNDS = 32;
     private static final int DELTA = 0x9e3779b9;

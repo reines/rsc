@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
-public class RSACipher {
+public final class RSACipher {
 
     public static ChannelBuffer encrypt(byte[] data, RSAPublicKey key) {
         final BigInteger decrypted = new BigInteger(data);
